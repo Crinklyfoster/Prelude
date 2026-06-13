@@ -5,6 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.models.document import Document
 from app.schemas.document import DocumentCreate
+from app.services.ingestion_service import IngestionService
+
+ingestion_service = IngestionService()
 
 
 def create_document(
@@ -41,6 +44,11 @@ def get_document_by_id(
 def save_uploaded_file(file):
     upload_dir = Path("uploads")
 
+    upload_dir.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
     unique_filename = f"{uuid4()}_{file.filename}"
 
     file_path = upload_dir / unique_filename
@@ -67,8 +75,24 @@ def upload_document(
     db.commit()
     db.refresh(document)
 
+    try:
+        ingestion_service.process_document(
+            document.id,
+            file_path
+        )
+
+        document.status = "indexed"
+
+    except Exception as e:
+        print(f"Ingestion error: {e}")
+
+        document.status = "failed"
+
+    db.commit()
+    db.refresh(document)
+
     return {
-        "message": "File uploaded successfully",
-        "document_id": document.id,
-        "filename": document.filename
+        "document_id": str(document.id),
+        "filename": document.filename,
+        "status": document.status
     }
