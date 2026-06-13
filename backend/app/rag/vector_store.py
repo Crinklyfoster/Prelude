@@ -58,11 +58,19 @@ class ChromaVectorStore:
     def search(
         self,
         query_embedding,
-        top_k: int = 5
+        top_k=5,
+        document_id=None
     ):
-        results = self.collection.query(
+        if document_id:
+            return self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k,
+                where={
+                    "document_id": str(document_id)
+                }
+            )
+
+        return self.collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k
         )
-
-        return results

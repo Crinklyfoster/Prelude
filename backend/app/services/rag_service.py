@@ -11,10 +11,12 @@ class RAGService:
     def answer_question(
         self,
         question: str,
+        document_id,
         top_k: int = 3
     ):
         retrieved_chunks = self.retriever.retrieve(
             question,
+            document_id=document_id,
             top_k=top_k
         )
 

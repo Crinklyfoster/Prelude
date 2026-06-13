@@ -11,6 +11,7 @@ class Retriever:
     def retrieve(
         self,
         query: str,
+        document_id: str,
         top_k: int = 5
     ):
         query_embedding = (
@@ -19,7 +20,8 @@ class Retriever:
 
         results = self.vector_store.search(
             query_embedding,
-            top_k
+            top_k,
+            document_id=document_id
         )
 
         documents = results["documents"][0]

@@ -22,9 +22,11 @@ def chat(
     request: ChatRequest
 ):
     result = rag_service.answer_question(
-        request.question
+        question=request.question,
+        document_id=request.document_id
     )
 
     return ChatResponse(
-        answer=result["answer"]
+        answer=result["answer"],
+        document_id=request.document_id
     )
