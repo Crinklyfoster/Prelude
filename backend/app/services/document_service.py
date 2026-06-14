@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 from app.models.document import Document
 from app.schemas.document import DocumentCreate
 from app.services.ingestion_service import IngestionService
+from app.rag.vector_store import ChromaVectorStore
 
 ingestion_service = IngestionService()
+vector_store = ChromaVectorStore()
 
 
 def create_document(
@@ -81,3 +83,33 @@ def upload_document(
         "status": document.status,
         "file_path": document.file_path
     }
+
+def delete_document(
+        db: Session,
+        document_id
+    ):
+        document = (
+            db.query(Document)
+            .filter(Document.id == document_id)
+            .first()
+        )
+
+        if not document:
+            return False
+
+        # Delete vectors from Chroma
+        vector_store.delete_document(
+            document_id
+        )
+
+        # Delete uploaded PDF
+        file_path = Path(document.file_path)
+
+        if file_path.exists():
+            file_path.unlink()
+
+        # Delete database record
+        db.delete(document)
+        db.commit()
+
+        return True

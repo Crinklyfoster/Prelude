@@ -83,3 +83,23 @@ def upload_document(
         "filename": result["filename"],
         "status": result["status"]
     }
+
+@router.delete("/{document_id}")
+def delete_document(
+    document_id: UUID,
+    db: Session = Depends(get_db)
+):
+    deleted = document_service.delete_document(
+        db,
+        document_id
+    )
+
+    if not deleted:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    return {
+        "message": "Document deleted successfully"
+    }

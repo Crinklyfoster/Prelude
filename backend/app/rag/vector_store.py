@@ -74,3 +74,13 @@ class ChromaVectorStore:
             query_embeddings=[query_embedding],
             n_results=top_k
         )
+    
+    def delete_document(
+        self,
+        document_id
+    ):
+        self.collection.delete(
+            where={
+                "document_id": str(document_id)
+            }
+        )
