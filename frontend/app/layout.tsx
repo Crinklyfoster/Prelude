@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+import Navbar from "@/components/layout/Navbar";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "sonner";
 
@@ -15,9 +16,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>
+          <Navbar />
           {children}
           <Toaster richColors />
         </Providers>
