@@ -1,22 +1,51 @@
 # Python
 __pycache__/
 *.pyc
+*.py[cod]
+*.pyo
+*.pyd
 
-# Virtual Environment
+# Virtual Environments
 venv/
+.venv/
 
 # Environment Files
 .env
+.env.*
 backend/.env
+!.env.example
 
-# Uploads
+# Uploads & Media
+uploads/
 backend/uploads/*
 
-# VS Code
-.vscode/
-
-# OS
-.DS_Store
-
-# ChromaDB
+# Databases & Vector Stores
+*.db
 chroma_db/
+faiss_index/
+data/vectorstore/
+
+# Frontend (Node / Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+.next/
+out/
+.turbo/
+
+# Logs & Cache
+*.log
+.cache/
+
+# Testing & Coverage
+coverage/
+*.tsbuildinfo
+
+# IDEs & Editors
+.vscode/
+.idea/
+
+# OS Specific
+.DS_Store
+Thumbs.db
