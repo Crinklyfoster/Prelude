@@ -60,7 +60,7 @@ def save_uploaded_file(file):
 
 
 def upload_document(
-    db: Session,
+    db,
     file
 ):
     file_path, filename = save_uploaded_file(file)
@@ -75,24 +75,9 @@ def upload_document(
     db.commit()
     db.refresh(document)
 
-    try:
-        ingestion_service.process_document(
-            document.id,
-            file_path
-        )
-
-        document.status = "indexed"
-
-    except Exception as e:
-        print(f"Ingestion error: {e}")
-
-        document.status = "failed"
-
-    db.commit()
-    db.refresh(document)
-
     return {
         "document_id": str(document.id),
         "filename": document.filename,
-        "status": document.status
+        "status": document.status,
+        "file_path": document.file_path
     }
