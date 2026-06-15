@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { Document } from "@/types/document";
@@ -23,7 +24,10 @@ export default function DocumentCard({
   return (
     <div className="border border-border rounded-lg p-4 bg-card">
       <div className="flex items-center justify-between">
-        <div>
+        <Link
+          href={`/documents/${document.id}`}
+          className="block"
+        >
           <p className="font-medium">
             {document.filename}
           </p>
@@ -44,7 +48,7 @@ export default function DocumentCard({
               document.uploaded_at
             ).toLocaleString()}
           </p>
-        </div>
+        </Link>
 
         <button
           onClick={() =>

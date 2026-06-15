@@ -9,6 +9,16 @@ export async function getDocuments(): Promise<Document[]> {
   return response.data;
 }
 
+export async function getDocument(
+  documentId: string
+): Promise<Document> {
+  const response = await api.get<Document>(
+    `/documents/${documentId}`
+  );
+
+  return response.data;
+}
+
 export async function uploadDocument(
   file: File
 ): Promise<UploadDocumentResponse> {
