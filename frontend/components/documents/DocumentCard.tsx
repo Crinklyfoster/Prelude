@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Document } from "@/types/document";
+import { useCreateSession } from "@/hooks/useCreateSession";
 import { useDeleteDocument } from "@/hooks/useDeleteDocument";
 
 interface DocumentCardProps {
@@ -19,6 +21,8 @@ const statusStyles = {
 export default function DocumentCard({
   document,
 }: DocumentCardProps) {
+  const router = useRouter();
+  const createSessionMutation = useCreateSession();
   const deleteMutation = useDeleteDocument();
 
   return (
@@ -50,27 +54,54 @@ export default function DocumentCard({
           </p>
         </Link>
 
-        <button
-          onClick={() =>
-            deleteMutation.mutate(document.id, {
-              onSuccess: () => {
-                toast.success(
-                  "Document deleted successfully"
-                );
-              },
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              try {
+                const result =
+                  await createSessionMutation.mutateAsync(
+                    document.id
+                  );
 
-              onError: () => {
-                toast.error(
-                  "Failed to delete document"
+                router.push(
+                  `/chat/${result.session_id}?documentId=${encodeURIComponent(
+                    result.document_id
+                  )}`
                 );
-              },
-            })
-          }
-          disabled={deleteMutation.isPending}
-          className="px-3 py-1 rounded border border-border"
-        >
-          Delete
-        </button>
+              } catch {
+                toast.error(
+                  "Failed to start chat"
+                );
+              }
+            }}
+            disabled={createSessionMutation.isPending}
+            className="px-3 py-1 rounded border border-border"
+          >
+            Start Chat
+          </button>
+
+          <button
+            onClick={() =>
+              deleteMutation.mutate(document.id, {
+                onSuccess: () => {
+                  toast.success(
+                    "Document deleted successfully"
+                  );
+                },
+
+                onError: () => {
+                  toast.error(
+                    "Failed to delete document"
+                  );
+                },
+              })
+            }
+            disabled={deleteMutation.isPending}
+            className="px-3 py-1 rounded border border-border"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );
