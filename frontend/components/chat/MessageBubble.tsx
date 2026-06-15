@@ -1,5 +1,7 @@
 import { Message } from "@/types/message";
 
+import SourceCard from "./SourceCard";
+
 interface MessageBubbleProps {
   message: Message;
 }
@@ -25,30 +27,27 @@ export default function MessageBubble({
         {message.content}
 
         {message.sources?.length ? (
-          <div className="mt-4 space-y-2">
+          <div className="mt-4">
             {message.sources.map((source, index) => (
-              <div
+              <SourceCard
                 key={index}
-                className="border rounded p-2 text-sm"
-              >
-                <p className="font-medium">
-                  Source {index + 1}
-                </p>
-
-                <p className="text-xs opacity-75">
-                  Document: {source.document_id}
-                </p>
-
-                <p className="text-xs opacity-75">
-                  Confidence:{" "}
-                  {(source.score * 100).toFixed(1)}%
-                </p>
-
-                <p className="mt-2">{source.preview}</p>
-              </div>
+                source={source}
+                index={index}
+              />
             ))}
           </div>
         ) : null}
+
+        <p
+          className={`mt-2 text-xs ${
+            isUser ? "text-blue-100" : "text-muted-foreground"
+          }`}
+        >
+          {message.timestamp.toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+          })}
+        </p>
       </div>
     </div>
   );

@@ -1,7 +1,12 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import {
+  KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import MessageList from "@/components/chat/MessageList";
 import TypingIndicator from "@/components/chat/TypingIndicator";
@@ -36,6 +41,7 @@ export default function ChatPage() {
     const userMessage: Message = {
       role: "user",
       content: input,
+      timestamp: new Date(),
     };
 
     setMessages((prev) => [
@@ -59,6 +65,7 @@ export default function ChatPage() {
         role: "assistant",
         content: response.answer,
         sources: response.sources,
+        timestamp: new Date(),
       };
 
       setMessages((prev) => [
@@ -70,18 +77,33 @@ export default function ChatPage() {
     }
   };
 
+  const handleKeyDown = (
+    event: KeyboardEvent<HTMLTextAreaElement>
+  ) => {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.nativeEvent.isComposing
+    ) {
+      event.preventDefault();
+      void handleSend();
+    }
+  };
+
   return (
-    <main className="max-w-4xl mx-auto p-8">
-      <h1 className="text-3xl font-bold">
-        Chat
-      </h1>
+    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col">
+      <header className="shrink-0 px-8 pt-8">
+        <h1 className="text-3xl font-bold">
+          Chat
+        </h1>
 
-      <p className="mt-2 text-sm text-muted-foreground">
-        Session: {sessionId}
-        {documentId && ` | Document: ${documentId}`}
-      </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Session: {sessionId}
+          {documentId && ` | Document: ${documentId}`}
+        </p>
+      </header>
 
-      <div className="mt-8">
+      <div className="flex-1 px-8 py-6">
         <MessageList messages={messages} />
 
         {chatMutation.isPending && (
@@ -93,22 +115,30 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="mt-8">
-        <textarea
-          value={input}
-          onChange={(event) =>
-            setInput(event.target.value)
-          }
-          className="w-full border rounded p-3"
-        />
+      <div className="shrink-0 border-t bg-background p-4 sm:px-8">
+        <div className="flex items-end gap-3">
+          <textarea
+            value={input}
+            onChange={(event) =>
+              setInput(event.target.value)
+            }
+            onKeyDown={handleKeyDown}
+            placeholder="Ask a question..."
+            rows={3}
+            className="min-h-20 flex-1 resize-none rounded border p-3"
+          />
 
-        <button
-          onClick={handleSend}
-          disabled={chatMutation.isPending}
-          className="mt-4 border px-4 py-2 rounded"
-        >
-          Send
-        </button>
+          <button
+            type="button"
+            onClick={() => void handleSend()}
+            disabled={
+              chatMutation.isPending || !input.trim()
+            }
+            className="rounded border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Send
+          </button>
+        </div>
       </div>
     </main>
   );
