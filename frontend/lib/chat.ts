@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import {
   ChatRequest,
   ChatResponse,
+  ChatSession,
   CreateSessionResponse,
 } from "@/types/chat";
 
@@ -30,4 +31,28 @@ export async function sendMessage(
   );
 
   return response.data;
+}
+
+export async function getSessions(): Promise<ChatSession[]> {
+  const response = await api.get<ChatSession[]>("/chat/sessions");
+
+  return response.data;
+}
+
+export async function renameSession(
+  sessionId: string,
+  title: string
+): Promise<ChatSession> {
+  const response = await api.patch<ChatSession>(
+    `/chat/sessions/${sessionId}`,
+    { title }
+  );
+
+  return response.data;
+}
+
+export async function deleteSession(
+  sessionId: string
+): Promise<void> {
+  await api.delete(`/chat/sessions/${sessionId}`);
 }

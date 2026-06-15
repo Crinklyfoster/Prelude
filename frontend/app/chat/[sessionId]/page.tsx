@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import MessageList from "@/components/chat/MessageList";
+import SessionSidebar from "@/components/chat/SessionSidebar";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import { useChat } from "@/hooks/useChat";
 import { Message } from "@/types/message";
@@ -91,55 +92,59 @@ export default function ChatPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col">
-      <header className="shrink-0 px-8 pt-8">
-        <h1 className="text-3xl font-bold">
-          Chat
-        </h1>
+    <div className="flex h-screen">
+      <SessionSidebar />
 
-        <p className="mt-2 text-sm text-muted-foreground">
-          Session: {sessionId}
-          {documentId && ` | Document: ${documentId}`}
-        </p>
-      </header>
+      <main className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col">
+        <header className="shrink-0 px-8 pt-8">
+          <h1 className="text-3xl font-bold">
+            Chat
+          </h1>
 
-      <div className="flex-1 px-8 py-6">
-        <MessageList messages={messages} />
+          <p className="mt-2 text-sm text-muted-foreground">
+            Session: {sessionId}
+            {documentId && ` | Document: ${documentId}`}
+          </p>
+        </header>
 
-        {chatMutation.isPending && (
-          <div className="mt-4">
-            <TypingIndicator />
-          </div>
-        )}
+        <div className="flex-1 overflow-y-auto px-8 py-6">
+          <MessageList messages={messages} />
 
-        <div ref={bottomRef} />
-      </div>
+          {chatMutation.isPending && (
+            <div className="mt-4">
+              <TypingIndicator />
+            </div>
+          )}
 
-      <div className="shrink-0 border-t bg-background p-4 sm:px-8">
-        <div className="flex items-end gap-3">
-          <textarea
-            value={input}
-            onChange={(event) =>
-              setInput(event.target.value)
-            }
-            onKeyDown={handleKeyDown}
-            placeholder="Ask a question..."
-            rows={3}
-            className="min-h-20 flex-1 resize-none rounded border p-3"
-          />
-
-          <button
-            type="button"
-            onClick={() => void handleSend()}
-            disabled={
-              chatMutation.isPending || !input.trim()
-            }
-            className="rounded border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Send
-          </button>
+          <div ref={bottomRef} />
         </div>
-      </div>
-    </main>
+
+        <div className="shrink-0 border-t bg-background p-4 sm:px-8">
+          <div className="flex items-end gap-3">
+            <textarea
+              value={input}
+              onChange={(event) =>
+                setInput(event.target.value)
+              }
+              onKeyDown={handleKeyDown}
+              placeholder="Ask a question..."
+              rows={3}
+              className="min-h-20 flex-1 resize-none rounded border p-3"
+            />
+
+            <button
+              type="button"
+              onClick={() => void handleSend()}
+              disabled={
+                chatMutation.isPending || !input.trim()
+              }
+              className="rounded border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
