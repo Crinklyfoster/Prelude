@@ -1,9 +1,12 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import MessageList from "@/components/chat/MessageList";
+import TypingIndicator from "@/components/chat/TypingIndicator";
 import { useChat } from "@/hooks/useChat";
+import { Message } from "@/types/message";
 
 export default function ChatPage() {
   const { sessionId } = useParams<{
@@ -12,7 +15,15 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const documentId = searchParams.get("documentId");
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
   const chatMutation = useChat();
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -22,17 +33,38 @@ export default function ChatPage() {
       return;
     }
 
+    const userMessage: Message = {
+      role: "user",
+      content: input,
+    };
+
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+    ]);
+
+    const question = input;
+
+    setInput("");
+
     try {
       const response =
         await chatMutation.mutateAsync({
           session_id: sessionId,
           document_id: documentId,
-          question: input,
+          question,
         });
 
-      console.log(response);
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: response.answer,
+        sources: response.sources,
+      };
 
-      setInput("");
+      setMessages((prev) => [
+        ...prev,
+        assistantMessage,
+      ]);
     } catch (error) {
       console.error(error);
     }
@@ -50,6 +82,18 @@ export default function ChatPage() {
       </p>
 
       <div className="mt-8">
+        <MessageList messages={messages} />
+
+        {chatMutation.isPending && (
+          <div className="mt-4">
+            <TypingIndicator />
+          </div>
+        )}
+
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="mt-8">
         <textarea
           value={input}
           onChange={(event) =>
@@ -63,9 +107,7 @@ export default function ChatPage() {
           disabled={chatMutation.isPending}
           className="mt-4 border px-4 py-2 rounded"
         >
-          {chatMutation.isPending
-            ? "Thinking..."
-            : "Send"}
+          Send
         </button>
       </div>
     </main>
