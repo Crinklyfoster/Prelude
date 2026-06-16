@@ -8,6 +8,11 @@ from app.core.logger import logger
 
 class QueryRewriter:
 
+    def __init__(self):
+        self.client = ollama.Client(
+            host=settings.OLLAMA_HOST
+        )
+
     def rewrite(
         self,
         question: str,
@@ -46,7 +51,7 @@ Latest Question:
 {question}
 """
 
-        response = ollama.chat(
+        response = self.client.chat(
             model=settings.CHAT_MODEL,
             messages=[
                 {

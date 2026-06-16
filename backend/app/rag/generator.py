@@ -13,6 +13,9 @@ class Generator:
         model_name: str = settings.CHAT_MODEL
     ):
         self.model_name = model_name
+        self.client = ollama.Client(
+            host=settings.OLLAMA_HOST
+        )
 
     def generate(
         self,
@@ -50,7 +53,7 @@ Answer:
 
         start = time.time()
 
-        response = ollama.chat(
+        response = self.client.chat(
             model=self.model_name,
             messages=[
                 {

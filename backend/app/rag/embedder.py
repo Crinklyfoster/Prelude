@@ -10,12 +10,15 @@ class OllamaEmbedder:
         model_name: str = settings.EMBEDDING_MODEL
     ):
         self.model_name = model_name
+        self.client = ollama.Client(
+            host=settings.OLLAMA_HOST
+        )
 
     def generate_embedding(
         self,
         text: str
     ):
-        response = ollama.embeddings(
+        response = self.client.embeddings(
             model=self.model_name,
             prompt=text
         )
