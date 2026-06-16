@@ -1,5 +1,6 @@
 from sqlalchemy import Column
 from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
 from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -21,6 +22,7 @@ class ChatSession(Base):
 
     document_id = Column(
         UUID(as_uuid=True),
+        ForeignKey("documents.id"),
         nullable=False
     )
 
