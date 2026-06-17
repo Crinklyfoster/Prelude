@@ -1,9 +1,11 @@
 import time
 
 from app.core.config import settings
-from app.core.logger import logger
+from app.core.logger import get_logger
 from app.rag.embedder import OllamaEmbedder
 from app.rag.vector_store import ChromaVectorStore
+
+logger = get_logger(__name__)
 
 
 class Retriever:

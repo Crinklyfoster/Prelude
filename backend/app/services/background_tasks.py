@@ -1,6 +1,9 @@
+from app.core.logger import get_logger
 from app.database.db import SessionLocal
 from app.models.document import Document
 from app.services.ingestion_service import IngestionService
+
+logger = get_logger(__name__)
 
 
 def process_document_background(
@@ -28,7 +31,9 @@ def process_document_background(
             db.commit()
 
     except Exception as e:
-        print(f"Background processing error: {e}")
+        logger.error(
+            f"Background processing error: {e}"
+        )
 
         document = (
             db.query(Document)

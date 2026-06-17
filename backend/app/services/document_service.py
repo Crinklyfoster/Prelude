@@ -5,11 +5,13 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
-from app.core.logger import logger
+from app.core.logger import get_logger
 from app.models.document import Document
 from app.schemas.document import DocumentCreate
 from app.services.ingestion_service import IngestionService
 from app.rag.vector_store import ChromaVectorStore
+
+logger = get_logger(__name__)
 
 ingestion_service = IngestionService()
 vector_store = ChromaVectorStore()

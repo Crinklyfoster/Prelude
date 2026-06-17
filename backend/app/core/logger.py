@@ -10,4 +10,5 @@ logging.basicConfig(
     )
 )
 
-logger = logging.getLogger("enterprise-rag")
+def get_logger(name: str):
+    return logging.getLogger(name)

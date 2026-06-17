@@ -1,10 +1,12 @@
 import time
 
-from app.core.logger import logger
+from app.core.logger import get_logger
 from app.services.pdf_processor import PDFProcessor
 from app.rag.chunker import DocumentChunker
 from app.rag.embedder import OllamaEmbedder
 from app.rag.vector_store import ChromaVectorStore
+
+logger = get_logger(__name__)
 
 
 class IngestionService:
