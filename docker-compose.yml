@@ -76,6 +76,22 @@ services:
 
     restart: unless-stopped      
 
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx.Dockerfile
+
+    container_name: enterprise-rag-nginx
+
+    ports:
+      - "80:80"
+
+    depends_on:
+      - frontend
+      - backend
+
+    restart: unless-stopped
+
 volumes:
   postgres_data:
 
