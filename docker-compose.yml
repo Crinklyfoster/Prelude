@@ -63,6 +63,19 @@ services:
 
       restart: unless-stopped
 
+  grafana:
+    image: grafana/grafana:latest
+
+    container_name: enterprise-rag-grafana
+
+    ports:
+      - "3001:3000"
+
+    depends_on:
+      - prometheus
+
+    restart: unless-stopped      
+
 volumes:
   postgres_data:
 
