@@ -58,10 +58,10 @@ def save_uploaded_file(file):
 def upload_document(db, file):
     start = time.time()
 
-    file_path, filename = save_uploaded_file(file)
+    file_path, stored_filename = save_uploaded_file(file)
 
     document = Document(
-        filename=filename, file_path=file_path, status="processing"
+        filename=file.filename, file_path=file_path, status="processing"
     )
 
     db.add(document)
