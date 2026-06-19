@@ -34,12 +34,20 @@ def get_document(document_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=DocumentResponse)
-def create_document(document: DocumentCreate, db: Session = Depends(get_db)):
-    return document_service.create_document(db=db, document=document)
+def create_document(
+    document: DocumentCreate,
+    session_id: UUID,
+    db: Session = Depends(get_db),
+):
+    return document_service.create_document(
+        db=db, session_id=session_id, document=document
+    )
 
 
-@router.post("/upload")
+
+@router.post("/sessions/{session_id}/documents")
 def upload_document(
+    session_id: UUID,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -49,7 +57,13 @@ def upload_document(
             status_code=400, detail="Only PDF files are supported"
         )
 
-    result = document_service.upload_document(db=db, file=file)
+    result = document_service.upload_document(
+        db=db,
+        session_id=session_id,
+        file=file,
+    )
+
+
 
     background_tasks.add_task(
         process_document_background, result["document_id"], result["file_path"]
@@ -60,6 +74,7 @@ def upload_document(
         "filename": result["filename"],
         "status": result["status"],
     }
+
 
 
 @router.delete("/{document_id}")

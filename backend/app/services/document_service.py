@@ -18,9 +18,12 @@ ingestion_service = IngestionService()
 vector_store = ChromaVectorStore()
 
 
-def create_document(db: Session, document: DocumentCreate):
+def create_document(db: Session, session_id, document: DocumentCreate):
     new_document = Document(
-        filename=document.filename, file_path=document.file_path
+        session_id=session_id,
+        filename=document.filename,
+        file_path=document.file_path,
+        status="uploaded",
     )
 
     db.add(new_document)
@@ -28,6 +31,7 @@ def create_document(db: Session, document: DocumentCreate):
     db.refresh(new_document)
 
     return new_document
+
 
 
 def get_documents(db: Session):
@@ -53,18 +57,22 @@ def save_uploaded_file(file):
     return str(file_path), unique_filename
 
 
-def upload_document(db, file):
+def upload_document(db, session_id, file):
     start = time.time()
 
     file_path, stored_filename = save_uploaded_file(file)
 
     document = Document(
-        filename=file.filename, file_path=file_path, status="processing"
+        session_id=session_id,
+        filename=file.filename,
+        file_path=file_path,
+        status="processing",
     )
 
     db.add(document)
     db.commit()
     db.refresh(document)
+
 
     DOCUMENT_UPLOADS.inc()
 

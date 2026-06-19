@@ -43,6 +43,7 @@ class ChatSessionResponse(BaseModel):
     created_at: datetime
 
 
+
 class MessageResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

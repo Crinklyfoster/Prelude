@@ -1,10 +1,17 @@
 from datetime import datetime
+from pathlib import Path
+
+from sqlalchemy.orm import Session
 
 from app.models.chat_session import ChatSession
+from app.models.document import Document
 from app.models.message import Message
+from app.rag.vector_store import ChromaVectorStore
 
 
 class ChatMemoryService:
+    vector_store = ChromaVectorStore()
+
     @staticmethod
     def generate_title(content):
         title = " ".join(content.split())
@@ -15,9 +22,9 @@ class ChatMemoryService:
         return f"{title[:57].rstrip()}..."
 
     @staticmethod
-    def create_session(db, document_id):
+    def create_session(db):
         session = ChatSession(
-            document_id=document_id, title=f"Chat {datetime.now():%H:%M}"
+            title=f"Chat {datetime.now():%H:%M}"
         )
 
         db.add(session)
@@ -25,6 +32,7 @@ class ChatMemoryService:
         db.refresh(session)
 
         return session
+
 
     @staticmethod
     def get_sessions(db):
@@ -52,17 +60,34 @@ class ChatMemoryService:
         return session
 
     @staticmethod
-    def delete_session(db, session_id):
+    def delete_session(db: Session, session_id):
         session = ChatMemoryService.get_session(db, session_id)
 
         if session is None:
             return False
 
-        (
-            db.query(Message)
-            .filter(Message.session_id == session_id)
-            .delete(synchronize_session=False)
+        # Step 1: fetch all documents in the session
+        documents = (
+            db.query(Document)
+            .filter(Document.session_id == session_id)
+            .all()
         )
+
+        # Step 2: delete physical files for each document
+        for doc in documents:
+            file_path = Path(doc.file_path)
+            try:
+                if file_path.exists():
+                    file_path.unlink()
+            except OSError:
+                # Keep deletion resilient if the file is already missing/locked
+                pass
+
+        # Step 3: delete Chroma vectors for each document
+        for doc in documents:
+            ChatMemoryService.vector_store.delete_document(doc.id)
+
+        # Step 4: delete session (messages/documents rows cascade via ORM)
         db.delete(session)
         db.commit()
 

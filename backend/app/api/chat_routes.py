@@ -65,8 +65,9 @@ def create_session(document_id: UUID, db: Session = Depends(get_db)):
 
     return {
         "session_id": str(session.id),
-        "document_id": str(session.document_id),
+        "document_id": str(document_id),
     }
+
 
 
 @router.get("/sessions", response_model=list[ChatSessionResponse])
