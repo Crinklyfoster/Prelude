@@ -20,6 +20,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install Dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
       - name: Ruff Lint
         run: |
           cd backend
