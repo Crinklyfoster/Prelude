@@ -21,9 +21,9 @@ class ChatMemoryService:
 
     @staticmethod
     def create_session(db):
-        session = ChatSession(
-            title=f"Chat {datetime.now():%H:%M}"
-        )
+        # Title will be set on the first user message.
+        session = ChatSession(title="New Chat")
+
 
         db.add(session)
         db.commit()

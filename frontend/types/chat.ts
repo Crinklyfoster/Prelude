@@ -1,13 +1,11 @@
 export interface ChatSession {
   id: string;
-  document_id: string;
   title: string;
   created_at: string;
 }
 
 export interface CreateSessionResponse {
   session_id: string;
-  document_id: string;
 }
 
 export interface Source {
@@ -24,7 +22,6 @@ export interface ChatResponse {
 
 export interface ChatRequest {
   session_id: string;
-  document_id: string;
   question: string;
 }
 
@@ -35,3 +32,4 @@ export interface ChatMessage {
   content: string;
   created_at: string;
 }
+

@@ -22,7 +22,7 @@ rag_service = RAGService()
 query_rewriter = QueryRewriter()
 
 
-@router.post("/", response_model=ChatResponse)
+@router.post("", response_model=ChatResponse)
 def chat(request: ChatRequest, db: Session = Depends(get_db)):
     ChatMemoryService.save_message(
         db=db,

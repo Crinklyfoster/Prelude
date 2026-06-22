@@ -59,18 +59,14 @@ export default function DocumentCard({
             onClick={async () => {
               try {
                 const result =
-                  await createSessionMutation.mutateAsync(
-                    document.id
-                  );
+                  await createSessionMutation.mutateAsync();
 
                 toast.success(
                   "Chat session created"
                 );
 
                 router.push(
-                  `/chat/${result.session_id}?documentId=${encodeURIComponent(
-                    result.document_id
-                  )}`
+                  `/chat/${result.session_id}`
                 );
               } catch {
                 toast.error(

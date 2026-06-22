@@ -10,8 +10,8 @@ import { toast } from "sonner";
 import { useUploadDocument } from "@/hooks/useUploadDocument";
 
 export default function DocumentUpload() {
-  const [selectedFile, setSelectedFile] =
-    useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] =
+    useState<File[]>([]);
   const fileInputRef =
     useRef<HTMLInputElement | null>(null);
 
@@ -20,35 +20,35 @@ export default function DocumentUpload() {
   const handleFileChange = (
     event: ChangeEvent<HTMLInputElement>
   ) => {
-    const file = event.target.files?.[0];
+    const files = Array.from(
+      event.target.files ?? []
+    );
 
-    if (file) {
-      setSelectedFile(file);
-    }
+    setSelectedFiles(files);
   };
 
-  const handleUpload = () => {
-    if (!selectedFile) return;
+  const handleUpload = async () => {
+    if (!selectedFiles.length) return;
 
-    uploadMutation.mutate(selectedFile, {
-      onSuccess: () => {
-        toast.success(
-          "Document uploaded successfully"
-        );
+    try {
+      await Promise.all(
+        selectedFiles.map((file) =>
+          uploadMutation.mutateAsync(file)
+        )
+      );
 
-        setSelectedFile(null);
+      toast.success(
+        `${selectedFiles.length} documents uploaded`
+      );
 
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      },
+      setSelectedFiles([]);
 
-      onError: () => {
-        toast.error(
-          "Failed to upload document"
-        );
-      },
-    });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch {
+      toast.error("Upload failed");
+    }
   };
 
   return (
@@ -59,23 +59,28 @@ export default function DocumentUpload() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,.docx,.txt"
+          multiple
+          accept=".pdf"
           className="hidden"
           onChange={handleFileChange}
         />
       </label>
 
-      <p className="mt-2 text-sm">
-        {selectedFile
-          ? selectedFile.name
-          : "No file selected"}
-      </p>
+      <div className="mt-2 text-sm">
+        {!selectedFiles.length && (
+          <p>No files selected</p>
+        )}
+
+        {selectedFiles.map((file) => (
+          <p key={file.name}>{file.name}</p>
+        ))}
+      </div>
 
       <button
         type="button"
         onClick={handleUpload}
         disabled={
-          !selectedFile ||
+          !selectedFiles.length ||
           uploadMutation.isPending
         }
         className="rounded bg-gray-900 px-4 py-2 text-white hover:bg-gray-700 disabled:opacity-50 dark:bg-gray-100 dark:text-black dark:hover:bg-white"

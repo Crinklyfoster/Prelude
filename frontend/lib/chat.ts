@@ -7,21 +7,15 @@ import {
   CreateSessionResponse,
 } from "@/types/chat";
 
-export async function createSession(
-  documentId: string
-): Promise<CreateSessionResponse> {
-  const response = await api.post<CreateSessionResponse>(
-    "/chat/sessions",
-    null,
-    {
-      params: {
-        document_id: documentId,
-      },
-    }
-  );
+export async function createSession(): Promise<CreateSessionResponse> {
+  const response =
+    await api.post<CreateSessionResponse>(
+      "/chat/sessions"
+    );
 
   return response.data;
 }
+
 
 export async function sendMessage(
   payload: ChatRequest
