@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     CHROMA_DB_PATH: str = "./chroma_db"
     EMBEDDING_MODEL: str = "nomic-embed-text"
     CHAT_MODEL: str = "qwen3:8b"
+    SECRET_KEY: str
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     BACKEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3000",
