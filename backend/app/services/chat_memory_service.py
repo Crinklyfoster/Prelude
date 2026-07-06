@@ -2,8 +2,6 @@ from sqlalchemy.orm import Session
 
 from app.models.chat_session import ChatSession
 from app.models.message import Message
-
-
 from app.rag.vector_store import ChromaVectorStore
 
 

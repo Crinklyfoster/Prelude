@@ -15,7 +15,6 @@ from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.schemas.document import DocumentCreate, DocumentResponse
 from app.services import document_service
-
 from app.services.background_tasks import process_document_background
 
 router = APIRouter(
@@ -25,15 +24,25 @@ router = APIRouter(
 
 
 @router.get("", response_model=list[DocumentResponse])
-def get_documents(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_documents(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     return document_service.get_documents(db, current_user_id=current_user.id)
 
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)
-def get_document(document_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    document = document_service.get_document_by_id(db, document_id, current_user_id=current_user.id)
-
+def get_document(
+    document_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    document = document_service.get_document_by_id(
+        db,
+        document_id,
+        current_user_id=current_user.id,
+    )
 
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -99,8 +108,16 @@ def upload_document(
 
 
 @router.delete("/{document_id}")
-def delete_document(document_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    deleted = document_service.delete_document(db, document_id, current_user_id=current_user.id)
+def delete_document(
+    document_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    deleted = document_service.delete_document(
+        db,
+        document_id,
+        current_user_id=current_user.id,
+    )
 
 
     if not deleted:
