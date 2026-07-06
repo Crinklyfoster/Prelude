@@ -11,8 +11,11 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from app.database.db import get_db
+from app.dependencies.auth import get_current_user
+from app.models.user import User
 from app.schemas.document import DocumentCreate, DocumentResponse
 from app.services import document_service
+
 from app.services.background_tasks import process_document_background
 
 router = APIRouter(
@@ -22,13 +25,15 @@ router = APIRouter(
 
 
 @router.get("", response_model=list[DocumentResponse])
-def get_documents(db: Session = Depends(get_db)):
-    return document_service.get_documents(db)
+def get_documents(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return document_service.get_documents(db, current_user_id=current_user.id)
+
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)
-def get_document(document_id: UUID, db: Session = Depends(get_db)):
-    document = document_service.get_document_by_id(db, document_id)
+def get_document(document_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    document = document_service.get_document_by_id(db, document_id, current_user_id=current_user.id)
+
 
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -39,11 +44,13 @@ def get_document(document_id: UUID, db: Session = Depends(get_db)):
 @router.post("", response_model=DocumentResponse)
 def create_document(
     document: DocumentCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     return document_service.create_document(
-        db=db, document=document
+        db=db, document=document, current_user_id=current_user.id
     )
+
 
 
 
@@ -56,8 +63,10 @@ def create_document(
 def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=400, detail="Only PDF files are supported"
@@ -66,7 +75,9 @@ def upload_document(
     result = document_service.upload_document(
         db=db,
         file=file,
+        current_user_id=current_user.id,
     )
+
 
 
     background_tasks.add_task(
@@ -88,8 +99,9 @@ def upload_document(
 
 
 @router.delete("/{document_id}")
-def delete_document(document_id: UUID, db: Session = Depends(get_db)):
-    deleted = document_service.delete_document(db, document_id)
+def delete_document(document_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    deleted = document_service.delete_document(db, document_id, current_user_id=current_user.id)
+
 
     if not deleted:
         raise HTTPException(status_code=404, detail="Document not found")

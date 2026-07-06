@@ -13,12 +13,14 @@ class RAGService:
         self,
         question: str,
         conversation_history: str = "",
+        current_user_id=None,
         top_k: int = settings.TOP_K,
     ):
         CHAT_REQUESTS.inc()
 
         retrieved_chunks = self.retriever.retrieve(
             question,
+            current_user_id=current_user_id,
             top_k=top_k,
         )
 

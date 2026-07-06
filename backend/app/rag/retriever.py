@@ -16,6 +16,7 @@ class Retriever:
     def retrieve(
         self,
         query: str,
+        current_user_id,
         top_k: int = settings.TOP_K,
     ):
         start = time.time()
@@ -23,8 +24,12 @@ class Retriever:
 
         query_embedding = self.embedder.generate_embedding(query)
 
+        # Per-user filtering is enforced by Chroma metadata (user_id).
+
         results = self.vector_store.search(
-            query_embedding, top_k, 
+            query_embedding=query_embedding,
+            current_user_id=current_user_id,
+            top_k=top_k,
         )
 
 

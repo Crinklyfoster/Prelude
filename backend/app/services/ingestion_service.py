@@ -19,7 +19,9 @@ class IngestionService:
         self,
         document_id,
         file_path,
+        current_user_id,
     ):
+
 
         start_time = time.time()
 
@@ -53,8 +55,10 @@ class IngestionService:
         storage_start = time.time()
         self.vector_store.add_chunks(
             document_id,
+            current_user_id,
             embedded_chunks,
         )
+
 
 
         logger.info(

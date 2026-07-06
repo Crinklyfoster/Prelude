@@ -13,7 +13,10 @@ from app.schemas.chat import (
     ChatSessionResponse,
     MessageResponse,
 )
+from app.dependencies.auth import get_current_user
+from app.models.user import User
 from app.services.chat_memory_service import ChatMemoryService
+
 from app.services.rag_service import RAGService
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
@@ -23,17 +26,20 @@ query_rewriter = QueryRewriter()
 
 
 @router.post("", response_model=ChatResponse)
-def chat(request: ChatRequest, db: Session = Depends(get_db)):
+def chat(request: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     ChatMemoryService.save_message(
         db=db,
         session_id=request.session_id,
         role="user",
         content=request.question,
+        current_user_id=current_user.id,
     )
 
+
     messages = ChatMemoryService.get_recent_messages(
-        db=db, session_id=request.session_id
+        db=db, session_id=request.session_id, current_user_id=current_user.id
     )
+
 
     conversation_history = "\n".join(
         f"{message.role}: {message.content}" for message in messages
@@ -46,6 +52,7 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
     result = rag_service.answer_question(
         question=rewritten_question,
         conversation_history=conversation_history,
+        current_user_id=current_user.id,
     )
 
 
@@ -54,14 +61,17 @@ def chat(request: ChatRequest, db: Session = Depends(get_db)):
         session_id=request.session_id,
         role="assistant",
         content=result["answer"],
+        current_user_id=current_user.id,
     )
+
 
     return ChatResponse(answer=result["answer"], sources=result["sources"])
 
 
 @router.post("/sessions")
-def create_session(db: Session = Depends(get_db)):
-    session = ChatMemoryService.create_session(db)
+def create_session(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    session = ChatMemoryService.create_session(db, current_user_id=current_user.id)
+
 
     return {
         "session_id": str(session.id),
@@ -70,13 +80,15 @@ def create_session(db: Session = Depends(get_db)):
 
 
 @router.get("/sessions", response_model=list[ChatSessionResponse])
-def get_sessions(db: Session = Depends(get_db)):
-    return ChatMemoryService.get_sessions(db)
+def get_sessions(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return ChatMemoryService.get_sessions(db, current_user_id=current_user.id)
+
 
 
 @router.get("/sessions/{session_id}", response_model=ChatSessionResponse)
-def get_session(session_id: UUID, db: Session = Depends(get_db)):
-    session = ChatMemoryService.get_session(db, session_id)
+def get_session(session_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    session = ChatMemoryService.get_session(db, session_id, current_user_id=current_user.id)
+
 
     if session is None:
         raise HTTPException(status_code=404, detail="Chat session not found")
@@ -87,15 +99,22 @@ def get_session(session_id: UUID, db: Session = Depends(get_db)):
 @router.get(
     "/sessions/{session_id}/messages", response_model=list[MessageResponse]
 )
-def get_messages(session_id: UUID, db: Session = Depends(get_db)):
-    return ChatMemoryService.get_messages(db, session_id)
+def get_messages(session_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return ChatMemoryService.get_messages(db, session_id, current_user_id=current_user.id)
+
 
 
 @router.patch("/sessions/{session_id}", response_model=ChatSessionResponse)
 def rename_session(
-    session_id: UUID, request: ChatSessionRename, db: Session = Depends(get_db)
+    session_id: UUID,
+    request: ChatSessionRename,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    session = ChatMemoryService.rename_session(db, session_id, request.title)
+    session = ChatMemoryService.rename_session(
+        db, session_id, request.title, current_user_id=current_user.id
+    )
+
 
     if session is None:
         raise HTTPException(status_code=404, detail="Chat session not found")
@@ -104,8 +123,9 @@ def rename_session(
 
 
 @router.delete("/sessions/{session_id}", status_code=HTTP_204_NO_CONTENT)
-def delete_session(session_id: UUID, db: Session = Depends(get_db)):
-    deleted = ChatMemoryService.delete_session(db, session_id)
+def delete_session(session_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    deleted = ChatMemoryService.delete_session(db, session_id, current_user_id=current_user.id)
+
 
     if not deleted:
         raise HTTPException(status_code=404, detail="Chat session not found")

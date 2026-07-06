@@ -9,7 +9,12 @@ class ChromaVectorStore:
             name="documents"
         )
 
-    def add_chunks(self, document_id, embedded_chunks):
+    def add_chunks(
+        self,
+        document_id,
+        current_user_id,
+        embedded_chunks,
+    ):
 
         ids = []
         documents = []
@@ -27,6 +32,7 @@ class ChromaVectorStore:
             metadatas.append(
                 {
                     "document_id": str(document_id),
+                    "user_id": str(current_user_id),
                     "chunk_id": chunk["chunk_id"],
                 }
             )
@@ -41,9 +47,16 @@ class ChromaVectorStore:
         )
 
 
-    def search(self, query_embedding, top_k=5):
+    def search(
+        self,
+        query_embedding,
+        current_user_id,
+        top_k=5,
+    ):
         return self.collection.query(
-            query_embeddings=[query_embedding], n_results=top_k
+            query_embeddings=[query_embedding],
+            n_results=top_k,
+            where={"user_id": str(current_user_id)},
         )
 
 

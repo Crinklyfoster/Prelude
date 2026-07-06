@@ -18,13 +18,15 @@ ingestion_service = IngestionService()
 vector_store = ChromaVectorStore()
 
 
-def create_document(db: Session, document: DocumentCreate):
+def create_document(db: Session, document: DocumentCreate, *, current_user_id):
 
     new_document = Document(
         filename=document.filename,
         file_path=document.file_path,
         status="uploaded",
+        user_id=current_user_id,
     )
+
 
 
     db.add(new_document)
@@ -35,12 +37,19 @@ def create_document(db: Session, document: DocumentCreate):
 
 
 
-def get_documents(db: Session):
-    return db.query(Document).all()
+def get_documents(db: Session, *, current_user_id):
+    return db.query(Document).filter(
+        Document.user_id == current_user_id
+    ).all()
 
 
-def get_document_by_id(db: Session, document_id):
-    return db.query(Document).filter(Document.id == document_id).first()
+
+def get_document_by_id(db: Session, document_id, *, current_user_id):
+    return db.query(Document).filter(
+        Document.id == document_id,
+        Document.user_id == current_user_id,
+    ).first()
+
 
 
 def save_uploaded_file(file):
@@ -58,7 +67,8 @@ def save_uploaded_file(file):
     return str(file_path), unique_filename
 
 
-def upload_document(db, file):
+def upload_document(db, file, *, current_user_id):
+
 
 
     start = time.time()
@@ -69,7 +79,9 @@ def upload_document(db, file):
         filename=file.filename,
         file_path=file_path,
         status="processing",
+        user_id=current_user_id,
     )
+
 
 
     db.add(document)
@@ -91,8 +103,12 @@ def upload_document(db, file):
 
 
 
-def delete_document(db: Session, document_id):
-    document = db.query(Document).filter(Document.id == document_id).first()
+def delete_document(db: Session, document_id, *, current_user_id):
+    document = db.query(Document).filter(
+        Document.id == document_id,
+        Document.user_id == current_user_id,
+    ).first()
+
 
     if not document:
         return False
