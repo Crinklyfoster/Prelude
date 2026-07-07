@@ -1,9 +1,14 @@
-export default function TypingIndicator() {
+export function TypingIndicator() {
   return (
-    <div className="flex justify-start">
-      <div className="rounded-lg bg-gray-100 px-4 py-3 text-black dark:bg-gray-800 dark:text-white">
-        Thinking...
-      </div>
+    <div className="flex items-center gap-2 p-4">
+      <div className="h-2 w-2 animate-bounce rounded-full bg-gray-500" />
+      <div
+        className="h-2 w-2 animate-bounce rounded-full bg-gray-500 delay-100"
+      />
+      <div
+        className="h-2 w-2 animate-bounce rounded-full bg-gray-500 delay-200"
+      />
     </div>
   );
 }
+

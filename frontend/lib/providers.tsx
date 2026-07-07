@@ -5,6 +5,8 @@ import { useState } from "react";
 
 import { ThemeProvider } from "@/components/layout/theme-provider";
 
+import { AuthProvider } from "@/lib/auth-provider";
+
 export function Providers({
   children,
 }: {
@@ -22,10 +24,11 @@ export function Providers({
   );
 
   return (
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
+

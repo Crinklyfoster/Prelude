@@ -10,20 +10,18 @@ import { useUploadDocument } from "@/hooks/useUploadDocument";
 import { useRouter } from "next/navigation";
 
 import SessionSidebar from "@/components/chat/SessionSidebar";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 
 export default function ChatHomePage() {
   const router = useRouter();
 
   const [question, setQuestion] = useState("");
 
-  const createSessionMutation =
-    useCreateSession();
+  const createSessionMutation = useCreateSession();
 
-  const fileInputRef =
-    useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadMutation =
-    useUploadDocument();
+  const uploadMutation = useUploadDocument();
 
   const handleSend = () => {
     const trimmed = question.trim();
@@ -42,105 +40,88 @@ export default function ChatHomePage() {
   };
 
   return (
-    <div className="flex h-screen">
-      <SessionSidebar />
+    <AuthGuard>
+      <div className="flex h-screen">
+        <SessionSidebar />
 
-      <main className="flex-1">
-        <main className="flex h-[calc(100dvh-57px)] items-center justify-center">
-          <div className="w-full max-w-3xl px-6">
-            <h1 className="mb-8 text-center text-4xl font-bold">
-              What would you like to ask?
-            </h1>
+        <main className="flex-1">
+          <main className="flex h-[calc(100dvh-57px)] items-center justify-center">
+            <div className="w-full max-w-3xl px-6">
+              <h1 className="mb-8 text-center text-4xl font-bold">
+                What would you like to ask?
+              </h1>
 
-            <div className="flex items-center gap-2 rounded-xl border p-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf"
-                className="hidden"
-                onChange={async (event) => {
-                  const files = Array.from(
-                    event.target.files ?? []
-                  );
+              <div className="flex items-center gap-2 rounded-xl border p-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={async (event) => {
+                    const files = Array.from(event.target.files ?? []);
 
-                  console.log(
-                    "Selected files:",
-                    files.map((f) => f.name)
-                  );
+                    console.log(
+                      "Selected files:",
+                      files.map((f) => f.name)
+                    );
 
-                  if (!files.length) return;
+                    if (!files.length) return;
 
-                  try {
-                    for (const file of files) {
-                      console.log(
-                        "Uploading:",
-                        file.name
-                      );
+                    try {
+                      for (const file of files) {
+                        console.log("Uploading:", file.name);
+                        await uploadMutation.mutateAsync(file);
+                      }
 
-                      await uploadMutation.mutateAsync(file);
+                      toast.success(`${files.length} document(s) uploaded`);
+
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    } catch (error) {
+                      console.error("UPLOAD ERROR:", error);
+                      toast.error("Failed to upload document(s)");
                     }
+                  }}
+                />
 
-                    toast.success(
-                      `${files.length} document(s) uploaded`
-                    );
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded p-2 hover:bg-muted"
+                >
+                  <Paperclip className="size-5" />
+                </button>
 
-                    if (fileInputRef.current) {
-                      fileInputRef.current.value = "";
+                <input
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSend();
                     }
-                  } catch (error) {
-                    console.error(
-                      "UPLOAD ERROR:",
-                      error
-                    );
+                  }}
+                  placeholder="Ask about your documents..."
+                  className="flex-1 bg-transparent outline-none"
+                />
 
-                    toast.error(
-                      "Failed to upload document(s)"
-                    );
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={
+                    !question.trim() || createSessionMutation.isPending
                   }
-                }}
-              />
-
-              <button
-                type="button"
-                onClick={() =>
-                  fileInputRef.current?.click()
-                }
-                className="rounded p-2 hover:bg-muted"
-              >
-                <Paperclip className="size-5" />
-              </button>
-
-              <input
-                value={question}
-                onChange={(e) =>
-                  setQuestion(e.target.value)
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSend();
-                  }
-                }}
-                placeholder="Ask about your documents..."
-                className="flex-1 bg-transparent outline-none"
-              />
-
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={
-                  !question.trim() ||
-                  createSessionMutation.isPending
-                }
-                className="rounded p-2 hover:bg-muted disabled:opacity-50"
-              >
-                <SendHorizontal className="size-5" />
-              </button>
+                  className="rounded p-2 hover:bg-muted disabled:opacity-50"
+                >
+                  <SendHorizontal className="size-5" />
+                </button>
+              </div>
             </div>
-          </div>
+          </main>
         </main>
-      </main>
-    </div>
+      </div>
+    </AuthGuard>
   );
 }
 

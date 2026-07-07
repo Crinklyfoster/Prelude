@@ -13,10 +13,10 @@ class Generator:
         self.model_name = model_name
         self.client = ollama.Client(host=settings.OLLAMA_HOST)
 
-    def generate(
-        self, context: str, question: str, conversation_history: str = ""
-    ):
-        prompt = f"""
+    def _build_prompt(
+        self, context: str, question: str, conversation_history: str
+    ) -> str:
+        return f"""
 You are a helpful assistant.
 
 Use the provided document context and conversation history
@@ -44,6 +44,15 @@ Current Question:
 Answer:
 """
 
+    def generate(
+        self, context: str, question: str, conversation_history: str = ""
+    ):
+        prompt = self._build_prompt(
+            context=context,
+            question=question,
+            conversation_history=conversation_history,
+        )
+
         start = time.time()
 
         response = self.client.chat(
@@ -58,3 +67,34 @@ Answer:
         )
 
         return response["message"]["content"]
+
+    def stream_generate(
+        self,
+        context: str,
+        question: str,
+        conversation_history: str = "",
+    ):
+        prompt = self._build_prompt(
+            context=context,
+            question=question,
+            conversation_history=conversation_history,
+        )
+
+        start = time.time()
+
+        response = self.client.chat(
+            model=self.model_name,
+            messages=[{"role": "user", "content": prompt}],
+            stream=True,
+        )
+
+        for chunk in response:
+            token = chunk["message"].get("content")
+            if token:
+                yield token
+
+        generation_time = time.time() - start
+        logger.info(
+            f"Model={self.model_name} GenerationLatency={generation_time:.3f}s"
+        )
+
