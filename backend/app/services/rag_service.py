@@ -9,6 +9,7 @@ from app.rag.retriever import Retriever
 
 class RAGService:
     def __init__(self):
+        self.retriever: Retriever | HybridRetriever
         if settings.RETRIEVAL_MODE == RetrievalMode.DENSE:
             self.retriever = Retriever()
         else:

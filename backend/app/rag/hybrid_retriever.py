@@ -1,6 +1,8 @@
 from collections import defaultdict
 
+from app.core.config import settings
 from app.rag.bm25_retriever import BM25Retriever
+from app.rag.reranker import IdentityReranker
 from app.rag.retriever import Retriever
 
 
@@ -8,6 +10,7 @@ class HybridRetriever:
     def __init__(self):
         self.dense = Retriever()
         self.sparse = BM25Retriever()
+        self.reranker = IdentityReranker()
 
         self.rrf_k = 60
 
@@ -36,6 +39,13 @@ class HybridRetriever:
             dense_results,
             sparse_results,
         )
+
+        if settings.ENABLE_RERANKER:
+            return self.reranker.rerank(
+                query=query,
+                chunks=fused,
+                top_k=top_k,
+            )
 
         return fused[:top_k]
 
