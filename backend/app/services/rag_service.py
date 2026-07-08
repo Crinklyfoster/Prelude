@@ -5,7 +5,12 @@ from app.rag.prompt_builder import PromptBuilder
 from app.rag.hybrid_retriever import HybridRetriever
 from app.rag.query_rewriter import QueryRewriter
 from app.rag.retrieval_mode import RetrievalMode
+import time
+import logging
+
 from app.rag.retriever import Retriever
+
+logger = logging.getLogger(__name__)
 
 
 class RAGService:
@@ -35,15 +40,28 @@ class RAGService:
         document_ids: list[str] | None = None,
         top_k: int = settings.TOP_K,
     ):
+        request_start = time.time()
         CHAT_REQUESTS.inc()
 
         retrieval_query = self.rewriter.rewrite(question, conversation_history)
 
+        retrieval_start = time.time()
         retrieved_chunks = self.retriever.retrieve(
             retrieval_query,
             current_user_id=current_user_id,
             document_ids=document_ids,
             top_k=top_k,
+        )
+        retrieval_time = time.time() - retrieval_start
+        logger.info(
+            "Retrieval completed in %.3fs (%d chunks)",
+            retrieval_time,
+            len(retrieved_chunks),
+        )
+        logger.info(
+            "Retrieval Mode=%s Retrieved=%d",
+            settings.RETRIEVAL_MODE,
+            len(retrieved_chunks),
         )
 
         if not retrieved_chunks:
@@ -57,10 +75,21 @@ class RAGService:
 
         context = self.prompt_builder.build(retrieved_chunks)
 
+        generation_start = time.time()
         answer = self.generator.generate(
             context=context,
             question=question,
             conversation_history=conversation_history,
+        )
+        generation_time = time.time() - generation_start
+        logger.info(
+            "Generation completed in %.3fs",
+            generation_time,
+        )
+
+        logger.info(
+            "Total request %.3fs",
+            time.time() - request_start,
         )
 
         return {
@@ -85,15 +114,28 @@ class RAGService:
         document_ids: list[str] | None = None,
         top_k: int = settings.TOP_K,
     ):
+        request_start = time.time()
         CHAT_REQUESTS.inc()
 
         retrieval_query = self.rewriter.rewrite(question, conversation_history)
 
+        retrieval_start = time.time()
         retrieved_chunks = self.retriever.retrieve(
             retrieval_query,
             current_user_id=current_user_id,
             document_ids=document_ids,
             top_k=top_k,
+        )
+        retrieval_time = time.time() - retrieval_start
+        logger.info(
+            "Retrieval completed in %.3fs (%d chunks)",
+            retrieval_time,
+            len(retrieved_chunks),
+        )
+        logger.info(
+            "Retrieval Mode=%s Retrieved=%d",
+            settings.RETRIEVAL_MODE,
+            len(retrieved_chunks),
         )
 
         sources = [
@@ -119,4 +161,8 @@ class RAGService:
         ):
             yield {"type": "token", "token": token}
 
+        logger.info(
+            "Total request %.3fs",
+            time.time() - request_start,
+        )
         yield {"type": "meta", "sources": sources, "final": True}
