@@ -22,7 +22,9 @@ frontend/.env.*
 # Uploads & Media
 uploads/
 backend/uploads/*
-storage/
+
+# Runtime lexical index
+backend/storage/lexical/*.json
 
 # Databases & Vector Stores
 *.db
