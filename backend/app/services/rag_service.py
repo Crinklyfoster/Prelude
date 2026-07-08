@@ -1,6 +1,7 @@
 from app.core.config import settings
 from app.core.metrics import CHAT_REQUESTS
 from app.rag.generator import Generator
+from app.rag.prompt_builder import PromptBuilder
 from app.rag.hybrid_retriever import HybridRetriever
 from app.rag.query_rewriter import QueryRewriter
 from app.rag.retrieval_mode import RetrievalMode
@@ -16,6 +17,7 @@ class RAGService:
             self.retriever = HybridRetriever()
         self.generator = Generator()
         self.rewriter = QueryRewriter()
+        self.prompt_builder = PromptBuilder()
 
     def _get_score(self, chunk):
         return (
@@ -53,7 +55,7 @@ class RAGService:
                 "sources": [],
             }
 
-        context = "\n\n".join(chunk["text"] for chunk in retrieved_chunks)
+        context = self.prompt_builder.build(retrieved_chunks)
 
         answer = self.generator.generate(
             context=context,
@@ -108,7 +110,7 @@ class RAGService:
             yield {"type": "meta", "sources": [], "final": True}
             return
 
-        context = "\n\n".join(chunk["text"] for chunk in retrieved_chunks)
+        context = self.prompt_builder.build(retrieved_chunks)
 
         for token in self.generator.stream_generate(
             context=context,
