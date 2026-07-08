@@ -17,6 +17,7 @@ class Retriever:
         self,
         query: str,
         current_user_id,
+        document_ids=None,
         top_k: int = settings.TOP_K,
     ):
         start = time.time()
@@ -28,6 +29,7 @@ class Retriever:
         results = self.vector_store.search(
             query_embedding=query_embedding,
             current_user_id=current_user_id,
+            document_ids=document_ids,
             top_k=top_k,
         )
         assert results is not None, "vector_store.search() returned None"

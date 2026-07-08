@@ -1,5 +1,7 @@
+from typing import cast
+
 import chromadb
-from chromadb.api.types import Documents, Embeddings, IDs, Metadatas
+from chromadb.api.types import Documents, Embeddings, IDs, Metadatas, Where
 
 
 class ChromaVectorStore:
@@ -13,7 +15,6 @@ class ChromaVectorStore:
     def add_chunks(
         self,
         document_id,
-        session_id,
         current_user_id,
         embedded_chunks,
     ):
@@ -33,7 +34,6 @@ class ChromaVectorStore:
             metadatas.append(
                 {
                     "document_id": str(document_id),
-                    "session_id": str(session_id),
                     "user_id": str(current_user_id),
                     "chunk_id": str(
                         chunk["chunk_id"]
@@ -52,12 +52,25 @@ class ChromaVectorStore:
         self,
         query_embedding,
         current_user_id,
+        document_ids=None,
         top_k=5,
     ):
+        user_filter: Where = {"user_id": {"$eq": str(current_user_id)}}
+
+        if document_ids:
+            doc_filter: Where = {
+                "document_id": {
+                    "$in": [str(doc_id) for doc_id in document_ids]
+                }
+            }
+            where: Where = cast(Where, {"$and": [user_filter, doc_filter]})
+        else:
+            where = user_filter
+
         return self.collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k,
-            where={"user_id": str(current_user_id)},
+            where=where,
         )
 
     def get_chunk(

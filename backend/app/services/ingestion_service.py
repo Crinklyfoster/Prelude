@@ -20,7 +20,6 @@ class IngestionService:
     def process_document(
         self,
         document_id,
-        session_id,
         file_path,
         current_user_id,
     ):
@@ -57,7 +56,6 @@ class IngestionService:
         storage_start = time.time()
         self.vector_store.add_chunks(
             document_id,
-            session_id,
             current_user_id,
             embedded_chunks,
         )

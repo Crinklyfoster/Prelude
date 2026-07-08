@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import ForeignKey, String
@@ -29,7 +29,7 @@ class Document(Base):
     status: Mapped[Optional[str]] = mapped_column(String, default="uploaded")
 
     uploaded_at: Mapped[Optional[datetime]] = mapped_column(
-        default=datetime.utcnow
+        default=lambda: datetime.now(timezone.utc)
     )
 
     user = relationship(

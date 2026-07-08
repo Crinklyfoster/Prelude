@@ -14,18 +14,21 @@ class HybridRetriever:
     def retrieve(
         self,
         query: str,
-        current_user_id: str,
+        current_user_id: str | None,
+        document_ids=None,
         top_k: int = 5,
-    ):
+    ) -> list[dict]:
         dense_results = self.dense.retrieve(
             query,
-            top_k=top_k * 2,
             current_user_id=current_user_id,
+            document_ids=document_ids,
+            top_k=top_k * 2,
         )
 
         sparse_results = self.sparse.search(
             query=query,
             current_user_id=current_user_id,
+            document_ids=document_ids,
             top_k=top_k * 2,
         )
 
@@ -38,9 +41,9 @@ class HybridRetriever:
 
     def _rrf(
         self,
-        dense_results,
-        sparse_results,
-    ):
+        dense_results: list[dict],
+        sparse_results: list[dict],
+    ) -> list[dict]:
         scores = defaultdict(float)
         objects = {}
 

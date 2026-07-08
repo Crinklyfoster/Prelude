@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class ChatRequest(BaseModel):
     session_id: str
     question: str
+    document_ids: list[str] | None = None
 
 
 class Source(BaseModel):

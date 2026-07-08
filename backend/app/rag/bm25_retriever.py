@@ -15,6 +15,7 @@ class BM25Retriever:
         self,
         query: str,
         current_user_id,
+        document_ids=None,
         top_k: int = 5,
     ):
         tokens = self.index.tokenize(query)
@@ -66,6 +67,13 @@ class BM25Retriever:
                 continue
 
             if metadata["user_id"] != str(current_user_id):
+                continue
+
+            if (
+                document_ids
+                and metadata["document_id"]
+                not in {str(doc) for doc in document_ids}
+            ):
                 continue
 
             results.append(

@@ -56,6 +56,7 @@ def chat(
         question=rewritten_question,
         conversation_history=conversation_history,
         current_user_id=current_user.id,
+        document_ids=request.document_ids,
     )
 
     ChatMemoryService.save_message(
@@ -107,6 +108,7 @@ def stream_chat(
             question=rewritten_question,
             conversation_history=conversation_history,
             current_user_id=current_user.id,
+            document_ids=request.document_ids,
         ):
             if chunk.get("type") == "token":
                 token = chunk.get("token", "")

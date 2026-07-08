@@ -1,19 +1,33 @@
 from app.core.config import settings
 from app.core.metrics import CHAT_REQUESTS
 from app.rag.generator import Generator
+from app.rag.hybrid_retriever import HybridRetriever
+from app.rag.retrieval_mode import RetrievalMode
 from app.rag.retriever import Retriever
 
 
 class RAGService:
     def __init__(self):
-        self.retriever = Retriever()
+        if settings.RETRIEVAL_MODE == RetrievalMode.DENSE:
+            self.retriever = Retriever()
+        else:
+            self.retriever = HybridRetriever()
         self.generator = Generator()
+
+    def _get_score(self, chunk):
+        return (
+            chunk.get("rrf_score")
+            or chunk.get("dense_distance")
+            or chunk.get("bm25_score")
+            or 0.0
+        )
 
     def answer_question(
         self,
         question: str,
         conversation_history: str = "",
         current_user_id=None,
+        document_ids: list[str] | None = None,
         top_k: int = settings.TOP_K,
     ):
         CHAT_REQUESTS.inc()
@@ -21,6 +35,7 @@ class RAGService:
         retrieved_chunks = self.retriever.retrieve(
             question,
             current_user_id=current_user_id,
+            document_ids=document_ids,
             top_k=top_k,
         )
 
@@ -48,7 +63,7 @@ class RAGService:
                 {
                     "chunk_id": chunk["metadata"]["chunk_id"],
                     "document_id": chunk["metadata"]["document_id"],
-                    "score": chunk["distance"],
+                    "score": self._get_score(chunk),
                     "preview": chunk["text"][:200],
                 }
                 for chunk in retrieved_chunks
@@ -60,6 +75,7 @@ class RAGService:
         question: str,
         conversation_history: str = "",
         current_user_id=None,
+        document_ids: list[str] | None = None,
         top_k: int = settings.TOP_K,
     ):
         CHAT_REQUESTS.inc()
@@ -67,6 +83,7 @@ class RAGService:
         retrieved_chunks = self.retriever.retrieve(
             question,
             current_user_id=current_user_id,
+            document_ids=document_ids,
             top_k=top_k,
         )
 
@@ -74,7 +91,7 @@ class RAGService:
             {
                 "chunk_id": chunk["metadata"]["chunk_id"],
                 "document_id": chunk["metadata"]["document_id"],
-                "score": chunk["distance"],
+                "score": self._get_score(chunk),
                 "preview": chunk["text"][:200],
             }
             for chunk in retrieved_chunks

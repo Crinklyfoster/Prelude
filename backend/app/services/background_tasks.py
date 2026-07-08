@@ -16,16 +16,15 @@ def process_document_background(document_id, file_path):
         document = (
             db.query(Document).filter(Document.id == document_id).first()
         )
-        if document is None:
+        current_user_id = document.user_id if document else None
+
+        if current_user_id is None:
             raise ValueError(
                 f"Document {document_id} not found or missing user ownership"
             )
 
-        current_user_id = document.user_id
-
         ingestion_service.process_document(
             document_id=document_id,
-            session_id=document.session_id,
             file_path=file_path,
             current_user_id=current_user_id,
         )
