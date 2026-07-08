@@ -1,8 +1,9 @@
 """documents.session_id foreign key + relationships"""
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "20260619_01_documents_session_id"
 down_revision = "000_initial_schema"
@@ -71,4 +72,3 @@ def downgrade() -> None:
     )
 
     op.drop_column("documents", "session_id")
-

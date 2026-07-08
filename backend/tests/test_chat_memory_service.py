@@ -2,9 +2,7 @@ from app.services.chat_memory_service import ChatMemoryService
 
 
 def test_generate_title_uses_normalized_message():
-    title = ChatMemoryService.generate_title(
-        "  What   is the ISS mission?\n"
-    )
+    title = ChatMemoryService.generate_title("  What   is the ISS mission?\n")
 
     assert title == "What is the ISS mission?"
 

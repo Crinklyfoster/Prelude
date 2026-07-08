@@ -1,52 +1,68 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from jose import jwt
+from joserfc import jwt
+from joserfc.jwk import OctKey
+from joserfc.jwt import JWTClaimsRegistry
 from passlib.context import CryptContext
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+)
+
+JWT_KEY = OctKey.import_key(settings.SECRET_KEY)
 
 
 def hash_password(password: str) -> str:
-    """Hash a plain-text password."""
     return pwd_context.hash(password)
 
 
-def verify_password(password: str, hashed_password: str) -> bool:
-    """Verify a plain-text password against its hash."""
-    return pwd_context.verify(password, hashed_password)
+def verify_password(
+    password: str,
+    hashed_password: str,
+) -> bool:
+    return pwd_context.verify(
+        password,
+        hashed_password,
+    )
 
 
 def create_access_token(user_id: UUID) -> str:
-    """Create a signed JWT access token."""
-
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
-    payload = {
+    claims = {
         "sub": str(user_id),
-        "exp": expire,
+        "exp": int(expire.timestamp()),
+    }
+
+    header = {
+        "alg": settings.JWT_ALGORITHM,
     }
 
     return jwt.encode(
-        payload,
-        settings.SECRET_KEY,
-        algorithm=settings.JWT_ALGORITHM,
+        header=header,
+        claims=claims,
+        key=JWT_KEY,
     )
 
 
 def verify_access_token(token: str) -> dict:
-    """
-    Verify and decode a JWT access token.
-
-    Raises JWTError if invalid or expired.
-    """
-
-    return jwt.decode(
+    token_obj = jwt.decode(
         token,
-        settings.SECRET_KEY,
+        JWT_KEY,
         algorithms=[settings.JWT_ALGORITHM],
     )
+
+    registry = JWTClaimsRegistry(
+        exp={"essential": True},
+        sub={"essential": True},
+    )
+
+    registry.validate(token_obj.claims)
+
+    return token_obj.claims

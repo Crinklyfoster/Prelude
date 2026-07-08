@@ -4,17 +4,21 @@ import { useState } from "react";
 
 import { Message } from "@/types/message";
 
-import SourceCard from "./SourceCard";
+import { SourceCard } from "./SourceCard";
 
 interface MessageBubbleProps {
   message: Message;
+  /** When true, renders a blinking cursor after the content (streaming assistant message). */
+  isStreaming?: boolean;
 }
 
 export default function MessageBubble({
   message,
+  isStreaming = false,
 }: MessageBubbleProps) {
   const [showSources, setShowSources] = useState(false);
   const isUser = message.role === "user";
+  const isEmpty = message.content === "" && !isUser;
 
   return (
     <div
@@ -29,9 +33,20 @@ export default function MessageBubble({
             : "bg-gray-100 text-black dark:bg-gray-800 dark:text-white"
         }`}
       >
-        {message.content}
+        {/* Content + blinking cursor while streaming */}
+        <span>
+          {message.content}
+          {isStreaming && !isUser && (
+            <span
+              aria-hidden="true"
+              className="ml-0.5 inline-block animate-pulse select-none font-normal"
+            >
+              ▌
+            </span>
+          )}
+        </span>
 
-        {message.sources?.length ? (
+        {!isEmpty && message.sources?.length ? (
           <div className="mt-3">
             <button
               onClick={() => setShowSources(!showSources)}
@@ -47,8 +62,8 @@ export default function MessageBubble({
                 {message.sources.map((source, index) => (
                   <SourceCard
                     key={index}
-                    source={source}
-                    index={index}
+                    preview={source.preview}
+                    score={source.score}
                   />
                 ))}
               </div>
@@ -56,16 +71,19 @@ export default function MessageBubble({
           </div>
         ) : null}
 
-        <p
-          className={`mt-2 text-xs ${
-            isUser ? "text-blue-100" : "text-muted-foreground"
-          }`}
-        >
-          {message.timestamp.toLocaleTimeString([], {
-            hour: "numeric",
-            minute: "2-digit",
-          })}
-        </p>
+        {/* Hide the timestamp on the empty placeholder bubble */}
+        {!isEmpty && (
+          <p
+            className={`mt-2 text-xs ${
+              isUser ? "text-blue-100" : "text-muted-foreground"
+            }`}
+          >
+            {message.timestamp.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+            })}
+          </p>
+        )}
       </div>
     </div>
   );

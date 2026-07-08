@@ -21,7 +21,6 @@ class ChatSession(Base):
 
     title = Column(String, default="New Chat", nullable=False)
 
-
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship(
@@ -34,14 +33,3 @@ class ChatSession(Base):
         back_populates="session",
         cascade="all, delete-orphan",
     )
-
-
-
-
-
-
-
-
-
-
-

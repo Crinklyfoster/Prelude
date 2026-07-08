@@ -11,6 +11,8 @@ import { useCreateSession } from "@/hooks/useCreateSession";
 import { useDeleteSession } from "@/hooks/useDeleteSession";
 import { useRenameSession } from "@/hooks/useRenameSession";
 import { useSessions } from "@/hooks/useSessions";
+import { useAuth } from "@/lib/auth-provider";
+
 
 function formatCreatedAt(createdAt: string) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -33,6 +35,9 @@ export default function SessionSidebar() {
   const { sessionId } = useParams<{
     sessionId?: string;
   }>();
+
+  const { logout } = useAuth();
+
 
   const {
     data,
@@ -134,6 +139,17 @@ export default function SessionSidebar() {
             <button
               type="button"
               className="mb-4 w-full rounded border border-gray-300 p-2 text-center font-medium hover:bg-muted dark:border-gray-700"
+              onClick={() => {
+                logout();
+                router.push("/login");
+              }}
+            >
+              Logout
+            </button>
+
+            <button
+              type="button"
+              className="mb-4 w-full rounded border border-gray-300 p-2 text-center font-medium hover:bg-muted dark:border-gray-700"
               disabled={createSessionMutation.isPending}
               onClick={() => {
                 createSessionMutation.mutate(
@@ -160,6 +176,7 @@ export default function SessionSidebar() {
             <h2 className="font-bold">Chats</h2>
           </>
         )}
+
 
         {!collapsed && (
           <div className="mt-4 space-y-2">

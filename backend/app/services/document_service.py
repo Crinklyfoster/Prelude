@@ -2,11 +2,13 @@ import time
 from pathlib import Path
 from uuid import uuid4
 
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
 
 from app.core.logger import get_logger
 from app.core.metrics import DOCUMENT_UPLOADS
 from app.models.document import Document
+from app.rag.lexical_index import LexicalIndex
 from app.rag.vector_store import ChromaVectorStore
 from app.schemas.document import DocumentCreate
 from app.services.ingestion_service import IngestionService
@@ -16,6 +18,7 @@ logger = get_logger(__name__)
 
 ingestion_service = IngestionService()
 vector_store = ChromaVectorStore()
+lexical_index = LexicalIndex()
 
 
 def create_document(db: Session, document: DocumentCreate, *, current_user_id):
@@ -27,8 +30,6 @@ def create_document(db: Session, document: DocumentCreate, *, current_user_id):
         user_id=current_user_id,
     )
 
-
-
     db.add(new_document)
     db.commit()
     db.refresh(new_document)
@@ -36,20 +37,19 @@ def create_document(db: Session, document: DocumentCreate, *, current_user_id):
     return new_document
 
 
-
 def get_documents(db: Session, *, current_user_id):
-    return db.query(Document).filter(
-        Document.user_id == current_user_id
-    ).all()
-
+    return db.query(Document).filter(Document.user_id == current_user_id).all()
 
 
 def get_document_by_id(db: Session, document_id, *, current_user_id):
-    return db.query(Document).filter(
-        Document.id == document_id,
-        Document.user_id == current_user_id,
-    ).first()
-
+    return (
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.user_id == current_user_id,
+        )
+        .first()
+    )
 
 
 def save_uploaded_file(file):
@@ -69,8 +69,6 @@ def save_uploaded_file(file):
 
 def upload_document(db, file, *, current_user_id):
 
-
-
     start = time.time()
 
     file_path, stored_filename = save_uploaded_file(file)
@@ -82,12 +80,9 @@ def upload_document(db, file, *, current_user_id):
         user_id=current_user_id,
     )
 
-
-
     db.add(document)
     db.commit()
     db.refresh(document)
-
 
     DOCUMENT_UPLOADS.inc()
 
@@ -101,23 +96,25 @@ def upload_document(db, file, *, current_user_id):
     }
 
 
-
-
 def delete_document(db: Session, document_id, *, current_user_id):
-    document = db.query(Document).filter(
-        Document.id == document_id,
-        Document.user_id == current_user_id,
-    ).first()
-
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.user_id == current_user_id,
+        )
+        .first()
+    )
 
     if not document:
         return False
 
     # Delete vectors from Chroma
-    vector_store.delete_document(document_id)
+    vector_store.delete_document(document.id)
+    lexical_index.remove_document(document.id)
 
     # Delete uploaded PDF
-    file_path = Path(document.file_path)
+    file_path = Path(str(document.file_path))
 
     if file_path.exists():
         file_path.unlink()

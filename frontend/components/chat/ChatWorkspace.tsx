@@ -7,13 +7,16 @@ import {
   useState,
 } from "react";
 
-import { Paperclip, SendHorizontal } from "lucide-react";
+import { Paperclip, SendHorizontal, Square } from "lucide-react";
 import { toast } from "sonner";
 
 import MessageList from "@/components/chat/MessageList";
-import TypingIndicator from "@/components/chat/TypingIndicator";
-import { useChat } from "@/hooks/useChat";
+import { TypingIndicator } from "@/components/chat/TypingIndicator";
+
+import { streamSendMessage } from "@/lib/chat";
+
 import { useMessages } from "@/hooks/useMessages";
+
 import { useUploadDocument } from "@/hooks/useUploadDocument";
 import { Message } from "@/types/message";
 
@@ -38,6 +41,7 @@ export default function ChatWorkspace({
     useState("");
   const [messages, setMessages] =
     useState<Message[]>([]);
+  const [isStreaming, setIsStreaming] = useState(false);
 
   const {
     data: history,
@@ -48,42 +52,40 @@ export default function ChatWorkspace({
     refetch: refetchMessages,
   } = useMessages(sessionId);
 
-  const chatMutation = useChat();
   const bottomRef =
     useRef<HTMLDivElement>(null);
   const hasAutoSent = useRef(false);
+  // Holds the current AbortController so the stop button can cancel streaming.
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const uploadMutation =
     useUploadDocument();
   const fileInputRef =
     useRef<HTMLInputElement>(null);
 
+  // Prefer local streaming state when we're actively streaming or have
+  // optimistic messages; otherwise fall back to server-fetched history.
   const renderedMessages =
-    history?.map((message) => ({
-      role: message.role,
-      content: message.content,
-      timestamp: new Date(message.created_at),
-    })) ?? messages;
+    isStreaming || messages.length > 0
+      ? messages
+      : history?.map((message) => ({
+          role: message.role,
+          content: message.content,
+          timestamp: new Date(message.created_at ?? ""),
+        })) ?? [];
 
-
-
-
-
-
-
-
-
+  // Auto-scroll to bottom whenever messages change (covers history load).
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const handleSend = async (
     message?: string
   ) => {
-    chatMutation.reset();
-
     const question =
       message ?? input;
 
@@ -95,33 +97,86 @@ export default function ChatWorkspace({
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-    ]);
+    // If local state is empty, seed it from server history so the
+    // existing conversation isn't dropped when we switch to local rendering.
+    setMessages((prev) => {
+      const base =
+        prev.length === 0 && history
+          ? history.map((m) => ({
+              role: m.role,
+              content: m.content,
+              timestamp: new Date(m.created_at ?? ""),
+            }))
+          : prev;
+      return [...base, userMessage];
+    });
 
     setInput("");
+    setIsStreaming(true);
+
+    // Fresh AbortController for this request.
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Insert an empty assistant bubble so the user sees something immediately.
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: "", timestamp: new Date() } as Message,
+    ]);
 
     try {
-      const response =
-        await chatMutation.mutateAsync({
-          session_id: sessionId,
-          question,
-        });
-
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: response.answer,
-        sources: response.sources,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [
-        ...prev,
-        assistantMessage,
-      ]);
-    } catch {
-      // The mutation error is rendered below the message list.
+      for await (const event of streamSendMessage(
+        { session_id: sessionId, question },
+        controller.signal,
+      )) {
+        if (event.type === "token") {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last && last.role === "assistant") {
+              updated[updated.length - 1] = {
+                ...last,
+                content: last.content + event.token,
+              };
+            }
+            return updated;
+          });
+          // Scroll on every token so the bubble grows into view.
+          scrollToBottom();
+        } else if (event.type === "meta") {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (last && last.role === "assistant") {
+              updated[updated.length - 1] = {
+                ...last,
+                sources: event.sources,
+              };
+            }
+            return updated;
+          });
+        }
+      }
+    } catch (err: unknown) {
+      // AbortError is intentional (user clicked Stop) — don't show an error toast.
+      if (err instanceof Error && err.name !== "AbortError") {
+        toast.error("Failed to send message. Please try again.");
+      }
+      // Remove the empty placeholder on error (but keep partial content on abort).
+      setMessages((prev) => {
+        const updated = [...prev];
+        if (
+          updated.length > 0 &&
+          updated[updated.length - 1].role === "assistant" &&
+          updated[updated.length - 1].content === ""
+        ) {
+          updated.pop();
+        }
+        return updated;
+      });
+    } finally {
+      abortControllerRef.current = null;
+      setIsStreaming(false);
     }
   };
 
@@ -150,7 +205,7 @@ export default function ChatWorkspace({
   };
 
   return (
-<main className="mx-auto flex h-full min-h-0 w-full max-w-4xl flex-1 flex-col">
+    <main className="mx-auto flex h-full min-h-0 w-full max-w-4xl flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8">
         {isLoadingMessages && (
           <div
@@ -199,30 +254,22 @@ export default function ChatWorkspace({
                   </p>
                 </div>
               ) : (
-                <MessageList messages={renderedMessages} />
+                <MessageList
+                  messages={renderedMessages}
+                  isStreaming={isStreaming}
+                />
               )}
 
             </>
           )}
 
-
-
-
-
-        {chatMutation.isPending && (
-          <div className="mt-4">
-            <TypingIndicator />
-          </div>
-        )}
-
-        {chatMutation.isError && (
-          <div
-            role="alert"
-            className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
-          >
-            Failed to send message. Please try again.
-          </div>
-        )}
+        {isStreaming &&
+          renderedMessages.length > 0 &&
+          renderedMessages[renderedMessages.length - 1]?.content === "" && (
+            <div className="mt-4">
+              <TypingIndicator />
+            </div>
+          )}
 
         <div ref={bottomRef} />
       </div>
@@ -287,22 +334,29 @@ export default function ChatWorkspace({
               className="flex-1 bg-transparent text-black outline-none dark:text-white"
             />
 
-            <button
-              type="button"
-              onClick={() => void handleSend()}
-              disabled={
-                chatMutation.isPending ||
-                !input.trim()
-              }
-              className="rounded p-2 hover:bg-muted disabled:opacity-50"
-              aria-label="Send message"
-            >
-              <SendHorizontal className="size-5" />
-            </button>
+            {isStreaming ? (
+              <button
+                type="button"
+                onClick={() => abortControllerRef.current?.abort()}
+                className="rounded p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                aria-label="Stop generating"
+              >
+                <Square className="size-5 fill-current" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleSend()}
+                disabled={!input.trim()}
+                className="rounded p-2 hover:bg-muted disabled:opacity-50"
+                aria-label="Send message"
+              >
+                <SendHorizontal className="size-5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
     </main>
   );
 }
-

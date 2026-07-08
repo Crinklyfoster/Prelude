@@ -1,4 +1,5 @@
 import chromadb
+from chromadb.api.types import Documents, Embeddings, IDs, Metadatas
 
 
 class ChromaVectorStore:
@@ -16,13 +17,12 @@ class ChromaVectorStore:
         embedded_chunks,
     ):
 
-        ids = []
-        documents = []
-        embeddings = []
-        metadatas = []
+        ids: IDs = []
+        documents: Documents = []
+        embeddings: Embeddings = []
+        metadatas: Metadatas = []
 
         for chunk in embedded_chunks:
-
             ids.append(f"{document_id}_{chunk['chunk_id']}")
 
             documents.append(chunk["text"])
@@ -33,19 +33,18 @@ class ChromaVectorStore:
                 {
                     "document_id": str(document_id),
                     "user_id": str(current_user_id),
-                    "chunk_id": chunk["chunk_id"],
+                    "chunk_id": str(
+                        chunk["chunk_id"]
+                    ),  # Chroma stub requires str
                 }
             )
 
-
         self.collection.add(
-
             ids=ids,
             documents=documents,
             embeddings=embeddings,
             metadatas=metadatas,
         )
-
 
     def search(
         self,
@@ -59,9 +58,33 @@ class ChromaVectorStore:
             where={"user_id": str(current_user_id)},
         )
 
+    def get_chunk(
+        self,
+        document_id: str,
+        chunk_id: int,
+    ):
+        result = self.collection.get(
+            where={
+                "$and": [
+                    {"document_id": {"$eq": document_id}},
+                    {"chunk_id": {"$eq": chunk_id}},
+                ]
+            },
+            include=[
+                "documents",
+                "metadatas",
+            ],
+        )
 
+        if not result["ids"]:
+            return None
 
-
+        assert result["documents"] is not None
+        assert result["metadatas"] is not None
+        return {
+            "text": result["documents"][0],
+            "metadata": result["metadatas"][0],
+        }
 
     def delete_document(self, document_id):
         self.collection.delete(where={"document_id": str(document_id)})

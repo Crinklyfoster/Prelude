@@ -4,10 +4,13 @@ import MessageBubble from "./MessageBubble";
 
 interface MessageListProps {
   messages: Message[];
+  /** When true, the last message renders a blinking cursor. */
+  isStreaming?: boolean;
 }
 
 export default function MessageList({
   messages,
+  isStreaming = false,
 }: MessageListProps) {
   if (messages.length === 0) {
     return (
@@ -29,6 +32,7 @@ export default function MessageList({
         <MessageBubble
           key={index}
           message={message}
+          isStreaming={isStreaming && index === messages.length - 1}
         />
       ))}
     </div>

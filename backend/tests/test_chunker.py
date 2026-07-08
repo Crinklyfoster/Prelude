@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from app.services.pdf_processor import PDFProcessor
 from app.rag.chunker import DocumentChunker
+from app.services.pdf_processor import PDFProcessor
 
 pdf_files = list(Path("uploads").glob("*.pdf"))
 
