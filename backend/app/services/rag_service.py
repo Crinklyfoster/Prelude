@@ -1,13 +1,13 @@
+import logging
+import time
+
 from app.core.config import settings
 from app.core.metrics import CHAT_REQUESTS
 from app.rag.generator import Generator
-from app.rag.prompt_builder import PromptBuilder
 from app.rag.hybrid_retriever import HybridRetriever
+from app.rag.prompt_builder import PromptBuilder
 from app.rag.query_rewriter import QueryRewriter
 from app.rag.retrieval_mode import RetrievalMode
-import time
-import logging
-
 from app.rag.retriever import Retriever
 
 logger = logging.getLogger(__name__)

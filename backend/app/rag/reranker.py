@@ -10,6 +10,7 @@ Replace IdentityReranker with:
 when GPU inference becomes available.
 """
 
+
 class BaseReranker:
     def rerank(
         self,

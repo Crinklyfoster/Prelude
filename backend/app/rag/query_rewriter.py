@@ -17,7 +17,14 @@ class QueryRewriter:
             return question
 
         has_reference = re.search(
-            r"\b(it|its|they|them|their|this|that|these|those|he|she|him|her|former|latter)\b",
+            (
+                r"\b("
+                r"it|its|they|them|their|"
+                r"this|that|these|those|"
+                r"he|she|him|her|"
+                r"former|latter"
+                r")\b"
+            ),
             question,
             re.IGNORECASE,
         )
@@ -32,7 +39,8 @@ You are a query rewriting system for Retrieval-Augmented Generation (RAG).
 Rewrite ONLY the user's latest question into a standalone search query.
 
 Rules:
-- Resolve references like "it", "its", "they", "them", "their", "this", "that", "these", "those", "he", "she", "him", "her", "former", "latter".
+- Resolve references like "it", "its", "they", "them", "their", "this", "that",
+  "these", "those", "he", "she", "him", "her", "former", "latter".
 - Preserve the user's original intent.
 - Do not answer the question.
 - Do not invent information.

@@ -1,5 +1,3 @@
-from app.core.config import settings
-
 class PromptBuilder:
     def __init__(self):
         self.max_context_chars = 12000
@@ -13,11 +11,7 @@ class PromptBuilder:
         """
         chunks = sorted(
             chunks,
-            key=lambda c: (
-                c.get("rerank_score")
-                or c.get("rrf_score")
-                or 0
-            ),
+            key=lambda c: c.get("rerank_score") or c.get("rrf_score") or 0,
             reverse=True,
         )
 
@@ -40,10 +34,7 @@ class PromptBuilder:
                 f"{text}\n"
             )
 
-            if (
-                current_size + len(formatted)
-                > self.max_context_chars
-            ):
+            if current_size + len(formatted) > self.max_context_chars:
                 break
 
             context_parts.append(formatted)

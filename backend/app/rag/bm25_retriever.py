@@ -69,11 +69,9 @@ class BM25Retriever:
             if metadata["user_id"] != str(current_user_id):
                 continue
 
-            if (
-                document_ids
-                and metadata["document_id"]
-                not in {str(doc) for doc in document_ids}
-            ):
+            if document_ids and metadata["document_id"] not in {
+                str(doc) for doc in document_ids
+            }:
                 continue
 
             results.append(
