@@ -57,7 +57,7 @@ class HybridRetriever:
                 "chunk_id": item["chunk_id"],
                 "text": item["text"],
                 "metadata": item["metadata"],
-                "score": item["score"],
+                "dense_distance": item.get("dense_distance"),
                 "source": "dense",
             }
 
@@ -83,7 +83,7 @@ class HybridRetriever:
                     "chunk_id": item["chunk_id"],
                     "text": chunk["text"],
                     "metadata": chunk["metadata"],
-                    "score": item["score"],
+                    "bm25_score": item["score"],
                     "source": "sparse",
                 }
             else:
@@ -97,8 +97,22 @@ class HybridRetriever:
 
         return [
             {
-                **objects[key],
+                "document_id": objects[key]["document_id"],
+                "chunk_id": objects[key]["chunk_id"],
+                "text": objects[key]["text"],
+                "metadata": objects[key]["metadata"],
+                "source": objects[key]["source"],
                 "rrf_score": score,
+                **(
+                    {"dense_distance": objects[key]["dense_distance"]}
+                    if "dense_distance" in objects[key]
+                    else {}
+                ),
+                **(
+                    {"bm25_score": objects[key]["bm25_score"]}
+                    if "bm25_score" in objects[key]
+                    else {}
+                ),
             }
             for key, score in ranked
             if key in objects
