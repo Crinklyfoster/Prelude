@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, String
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.db import Base
 
@@ -11,21 +12,25 @@ from app.database.db import Base
 class Document(Base):
     __tablename__ = "documents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
 
-    user_id = Column(
+    user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    filename = Column(String, nullable=False)
+    filename: Mapped[str] = mapped_column(String, nullable=False)
 
-    file_path = Column(String, nullable=False)
+    file_path: Mapped[str] = mapped_column(String, nullable=False)
 
-    status = Column(String, default="uploaded")
+    status: Mapped[Optional[str]] = mapped_column(String, default="uploaded")
 
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    uploaded_at: Mapped[Optional[datetime]] = mapped_column(
+        default=datetime.utcnow
+    )
 
     user = relationship(
         "User",

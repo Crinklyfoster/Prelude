@@ -13,6 +13,7 @@ class ChromaVectorStore:
     def add_chunks(
         self,
         document_id,
+        session_id,
         current_user_id,
         embedded_chunks,
     ):
@@ -32,6 +33,7 @@ class ChromaVectorStore:
             metadatas.append(
                 {
                     "document_id": str(document_id),
+                    "session_id": str(session_id),
                     "user_id": str(current_user_id),
                     "chunk_id": str(
                         chunk["chunk_id"]
