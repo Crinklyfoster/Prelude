@@ -2,6 +2,7 @@ from app.core.config import settings
 from app.core.metrics import CHAT_REQUESTS
 from app.rag.generator import Generator
 from app.rag.hybrid_retriever import HybridRetriever
+from app.rag.query_rewriter import QueryRewriter
 from app.rag.retrieval_mode import RetrievalMode
 from app.rag.retriever import Retriever
 
@@ -13,6 +14,7 @@ class RAGService:
         else:
             self.retriever = HybridRetriever()
         self.generator = Generator()
+        self.rewriter = QueryRewriter()
 
     def _get_score(self, chunk):
         return (
@@ -32,8 +34,10 @@ class RAGService:
     ):
         CHAT_REQUESTS.inc()
 
+        retrieval_query = self.rewriter.rewrite(question, conversation_history)
+
         retrieved_chunks = self.retriever.retrieve(
-            question,
+            retrieval_query,
             current_user_id=current_user_id,
             document_ids=document_ids,
             top_k=top_k,
@@ -80,8 +84,10 @@ class RAGService:
     ):
         CHAT_REQUESTS.inc()
 
+        retrieval_query = self.rewriter.rewrite(question, conversation_history)
+
         retrieved_chunks = self.retriever.retrieve(
-            question,
+            retrieval_query,
             current_user_id=current_user_id,
             document_ids=document_ids,
             top_k=top_k,
