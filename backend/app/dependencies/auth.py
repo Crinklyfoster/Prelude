@@ -1,11 +1,11 @@
 from uuid import UUID
 
-from joserfc.errors import JoseError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import (
     HTTPAuthorizationCredentials,
     HTTPBearer,
 )
+from joserfc.errors import JoseError
 from sqlalchemy.orm import Session
 
 from app.core.security import verify_access_token

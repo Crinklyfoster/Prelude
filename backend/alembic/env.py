@@ -2,10 +2,10 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 
+import app.models  # noqa: F401 – side-effect import: registers all models with Base.metadata
 from alembic import context
 from app.core.config import settings
 from app.database.db import Base
-import app.models  # noqa: F401 – side-effect import: registers all models with Base.metadata
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
