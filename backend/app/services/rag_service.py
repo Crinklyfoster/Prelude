@@ -24,7 +24,6 @@ class RAGService:
             top_k=top_k,
         )
 
-
         if not retrieved_chunks:
             return {
                 "question": question,
@@ -95,4 +94,3 @@ class RAGService:
             yield {"type": "token", "token": token}
 
         yield {"type": "meta", "sources": sources, "final": True}
-

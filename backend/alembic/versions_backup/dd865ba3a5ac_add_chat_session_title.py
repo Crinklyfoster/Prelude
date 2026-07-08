@@ -4,14 +4,11 @@ Revision ID: dd865ba3a5ac
 Revises: 20260615_01
 Create Date: 2026-06-15 12:09:21.236717
 """
+
 from typing import Sequence, Union
 
-from alembic import op
-import sqlalchemy as sa
-
-
-revision: str = 'dd865ba3a5ac'
-down_revision: Union[str, Sequence[str], None] = '20260615_01'
+revision: str = "dd865ba3a5ac"
+down_revision: Union[str, Sequence[str], None] = "20260615_01"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

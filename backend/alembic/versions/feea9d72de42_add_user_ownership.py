@@ -6,9 +6,9 @@ Revises: 2fb107ae02ce
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 revision: str = "feea9d72de42"
 down_revision: Union[str, Sequence[str], None] = "2fb107ae02ce"
@@ -91,4 +91,3 @@ def downgrade() -> None:
         "documents",
         "user_id",
     )
-

@@ -31,8 +31,3 @@ class Document(Base):
         "User",
         back_populates="documents",
     )
-
-
-
-
-

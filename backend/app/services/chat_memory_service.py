@@ -22,14 +22,11 @@ class ChatMemoryService:
         # Title will be set on the first user message.
         session = ChatSession(title="New Chat", user_id=current_user_id)
 
-
-
         db.add(session)
         db.commit()
         db.refresh(session)
 
         return session
-
 
     @staticmethod
     def get_sessions(db, *, current_user_id):
@@ -39,7 +36,6 @@ class ChatMemoryService:
             .order_by(ChatSession.created_at.desc())
             .all()
         )
-
 
     @staticmethod
     def get_session(db, session_id, *, current_user_id):
@@ -52,13 +48,11 @@ class ChatMemoryService:
             .first()
         )
 
-
     @staticmethod
     def rename_session(db, session_id, title, *, current_user_id):
         session = ChatMemoryService.get_session(
             db, session_id, current_user_id=current_user_id
         )
-
 
         if session is None:
             return None
@@ -75,7 +69,6 @@ class ChatMemoryService:
             db, session_id, current_user_id=current_user_id
         )
 
-
         if session is None:
             return False
 
@@ -89,7 +82,6 @@ class ChatMemoryService:
         is_first_user_message = (
             role == "user"
             and not db.query(Message.id)
-
             .join(ChatSession, Message.session_id == ChatSession.id)
             .filter(
                 Message.session_id == session_id,
@@ -112,8 +104,6 @@ class ChatMemoryService:
         if session_owned is None:
             raise ValueError("Chat session not found")
 
-
-
         message = Message(session_id=session_id, role=role, content=content)
 
         db.add(message)
@@ -123,10 +113,8 @@ class ChatMemoryService:
                 db, session_id, current_user_id=current_user_id
             )
 
-
             if session is not None:
                 session.title = ChatMemoryService.generate_title(content)
-
 
         db.commit()
 
@@ -140,13 +128,11 @@ class ChatMemoryService:
                 ChatSession.user_id == current_user_id,
             )
             .order_by(Message.created_at.desc())
-
             .limit(limit)
             .all()
         )
 
         return list(reversed(messages))
-
 
     @staticmethod
     def get_messages(db, session_id, *, current_user_id):
@@ -160,4 +146,3 @@ class ChatMemoryService:
             .order_by(Message.created_at.asc())
             .all()
         )
-

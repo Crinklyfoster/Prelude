@@ -1,10 +1,10 @@
 """initial schema"""
 
-from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "000_initial_schema"
 down_revision = None
@@ -20,7 +20,7 @@ def upgrade() -> None:
             "id",
             postgresql.UUID(as_uuid=True),
             primary_key=True,
-            nullable=False
+            nullable=False,
         ),
         sa.Column("filename", sa.String(), nullable=False),
         sa.Column("file_path", sa.String(), nullable=False),
@@ -34,14 +34,14 @@ def upgrade() -> None:
             "id",
             postgresql.UUID(as_uuid=True),
             primary_key=True,
-            nullable=False
+            nullable=False,
         ),
         sa.Column(
             "document_id",
             postgresql.UUID(as_uuid=True),
             sa.ForeignKey("documents.id"),
-            nullable=False
-        ),        
+            nullable=False,
+        ),
         sa.Column("title", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=True),
     )
@@ -52,14 +52,14 @@ def upgrade() -> None:
             "id",
             postgresql.UUID(as_uuid=True),
             primary_key=True,
-            nullable=False
+            nullable=False,
         ),
         sa.Column(
             "session_id",
             postgresql.UUID(as_uuid=True),
             sa.ForeignKey("chat_sessions.id"),
-            nullable=False
-        ),        
+            nullable=False,
+        ),
         sa.Column("role", sa.String(), nullable=False),
         sa.Column("content", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=True),

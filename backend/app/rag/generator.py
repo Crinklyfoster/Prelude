@@ -97,4 +97,3 @@ Answer:
         logger.info(
             f"Model={self.model_name} GenerationLatency={generation_time:.3f}s"
         )
-

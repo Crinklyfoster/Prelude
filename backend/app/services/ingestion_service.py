@@ -3,6 +3,7 @@ import time
 from app.core.logger import get_logger
 from app.rag.chunker import DocumentChunker
 from app.rag.embedder import OllamaEmbedder
+from app.rag.lexical_index import LexicalIndex
 from app.rag.vector_store import ChromaVectorStore
 from app.services.pdf_processor import PDFProcessor
 
@@ -14,6 +15,7 @@ class IngestionService:
         self.chunker = DocumentChunker()
         self.embedder = OllamaEmbedder()
         self.vector_store = ChromaVectorStore()
+        self.lexical_index = LexicalIndex()
 
     def process_document(
         self,
@@ -21,7 +23,6 @@ class IngestionService:
         file_path,
         current_user_id,
     ):
-
 
         start_time = time.time()
 
@@ -59,7 +60,11 @@ class IngestionService:
             embedded_chunks,
         )
 
-
+        self.lexical_index.add_document(
+            document_id=document_id,
+            current_user_id=current_user_id,
+            chunks=embedded_chunks,
+        )
 
         logger.info(
             f"Document {document_id}: "

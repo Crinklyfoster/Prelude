@@ -22,22 +22,14 @@ class AuthService:
         db: Session,
         email: str,
     ) -> User | None:
-        return (
-            db.query(User)
-            .filter(User.email == email)
-            .first()
-        )
+        return db.query(User).filter(User.email == email).first()
 
     def get_user_by_id(
         self,
         db: Session,
         user_id: UUID,
     ) -> User | None:
-        return (
-            db.query(User)
-            .filter(User.id == user_id)
-            .first()
-        )
+        return db.query(User).filter(User.id == user_id).first()
 
     def _save_user(
         self,
@@ -108,4 +100,3 @@ class AuthService:
 
 
 auth_service = AuthService()
-

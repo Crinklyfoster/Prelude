@@ -14,18 +14,14 @@ def process_document_background(document_id, file_path):
         ingestion_service = IngestionService()
 
         document = (
-            db.query(Document)
-            .filter(Document.id == document_id)
-            .first()
+            db.query(Document).filter(Document.id == document_id).first()
         )
         current_user_id = document.user_id if document else None
 
         if current_user_id is None:
             raise ValueError(
-                f"Document {document_id} "
-                "not found or missing user ownership"
+                f"Document {document_id} not found or missing user ownership"
             )
-
 
         ingestion_service.process_document(
             document_id=document_id,
@@ -33,12 +29,8 @@ def process_document_background(document_id, file_path):
             current_user_id=current_user_id,
         )
 
-
-
         document = (
-            db.query(Document)
-            .filter(Document.id == document_id)
-            .first()
+            db.query(Document).filter(Document.id == document_id).first()
         )
 
         if document:
@@ -49,9 +41,7 @@ def process_document_background(document_id, file_path):
         logger.error(f"Background processing error: {e}")
 
         document = (
-            db.query(Document)
-            .filter(Document.id == document_id)
-            .first()
+            db.query(Document).filter(Document.id == document_id).first()
         )
 
         if document:
