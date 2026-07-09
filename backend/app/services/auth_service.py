@@ -3,6 +3,8 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.audit_logger import log_auth_event
+from app.core.config import settings
 from app.core.security import (
     create_access_token,
     hash_password,
@@ -57,16 +59,30 @@ class AuthService:
                 detail="Email already registered",
             )
 
+        role = (
+            "admin"
+            if settings.BOOTSTRAP_ADMIN_EMAIL
+            and request.email == settings.BOOTSTRAP_ADMIN_EMAIL
+            else "user"
+        )
+
         user = User(
             email=request.email,
             name=request.name,
             hashed_password=hash_password(request.password),
+            role=role,
         )
 
-        return self._save_user(
-            db,
-            user,
+        saved_user = self._save_user(db, user)
+        
+        log_auth_event(
+            action="register",
+            user_id=str(saved_user.id),
+            email=saved_user.email,
+            role=saved_user.role,
         )
+
+        return saved_user
 
     def login(
         self,
@@ -93,7 +109,14 @@ class AuthService:
                 detail="Invalid email or password",
             )
 
-        token = create_access_token(user.id)
+        token = create_access_token(user.id, user.role)
+        
+        log_auth_event(
+            action="login",
+            user_id=str(user.id),
+            email=user.email,
+        )
+        
         return TokenResponse(
             access_token=token,
         )

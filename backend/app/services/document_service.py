@@ -5,16 +5,13 @@ from uuid import uuid4
 # pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
 
-from app.core.logger import get_logger
+from app.core.audit_logger import log_document_event
 from app.core.metrics import DOCUMENT_UPLOADS
 from app.models.document import Document
 from app.rag.lexical_index import LexicalIndex
 from app.rag.vector_store import ChromaVectorStore
 from app.schemas.document import DocumentCreate
 from app.services.ingestion_service import IngestionService
-
-logger = get_logger(__name__)
-
 
 ingestion_service = IngestionService()
 vector_store = ChromaVectorStore()
@@ -86,7 +83,13 @@ def upload_document(db, file, *, current_user_id):
 
     DOCUMENT_UPLOADS.inc()
 
-    logger.info(f"Upload completed in {time.time() - start:.2f}s")
+    log_document_event(
+        action="upload",
+        document_id=str(document.id),
+        user_id=str(current_user_id),
+        filename=document.filename,
+        duration=round(time.time() - start, 2),
+    )
 
     return {
         "document_id": str(document.id),
@@ -122,5 +125,12 @@ def delete_document(db: Session, document_id, *, current_user_id):
     # Delete database record
     db.delete(document)
     db.commit()
+
+    log_document_event(
+        action="delete",
+        document_id=str(document_id),
+        user_id=str(current_user_id),
+        filename=document.filename,
+    )
 
     return True

@@ -30,13 +30,14 @@ def verify_password(
     )
 
 
-def create_access_token(user_id: UUID) -> str:
+def create_access_token(user_id: UUID, role: str = "user") -> str:
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
     claims = {
         "sub": str(user_id),
+        "role": role,
         "exp": int(expire.timestamp()),
     }
 

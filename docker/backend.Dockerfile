@@ -21,4 +21,9 @@ RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
+RUN adduser --disabled-password --gecos "" appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
 CMD ["/app/entrypoint.sh"]

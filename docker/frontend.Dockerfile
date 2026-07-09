@@ -12,4 +12,8 @@ RUN npm run build
 
 EXPOSE 3000
 
+RUN adduser --disabled-password --gecos "" nextuser
+
+USER nextuser
+
 CMD ["npm", "run", "start"]

@@ -1,10 +1,27 @@
 import logging
+import sys
 
-logging.basicConfig(
-    level=logging.INFO,
-    format=("%(asctime)s | %(levelname)s | %(name)s | %(message)s"),
-)
+from pythonjsonlogger.json import JsonFormatter
 
 
 def get_logger(name: str):
-    return logging.getLogger(name)
+    logger = logging.getLogger(name)
+
+    if logger.handlers:
+        return logger
+
+    logger.setLevel(logging.INFO)
+
+    handler = logging.StreamHandler(sys.stdout)
+
+    formatter = JsonFormatter(
+        "%(asctime)s %(levelname)s %(name)s %(message)s"
+    )
+
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
+
+    logger.propagate = False
+
+    return logger

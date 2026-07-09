@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, ShieldCheck, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,7 +36,7 @@ export default function SessionSidebar() {
     sessionId?: string;
   }>();
 
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
 
   const {
@@ -117,7 +117,7 @@ export default function SessionSidebar() {
 
   return (
     <aside
-      className={`shrink-0 border-r transition-all duration-300
+      className={`flex h-full flex-col shrink-0 border-r transition-all duration-300
       ${collapsed ? "w-16" : "w-72"}`}
     >
       <button
@@ -129,23 +129,12 @@ export default function SessionSidebar() {
         ☰
       </button>
 
-      <div className="px-4">
+      <div className="flex flex-1 flex-col overflow-hidden px-4">
         {!collapsed && (
           <>
             <div className="mb-4">
               <ThemeToggle />
             </div>
-
-            <button
-              type="button"
-              className="mb-4 w-full rounded border border-gray-300 p-2 text-center font-medium hover:bg-muted dark:border-gray-700"
-              onClick={() => {
-                logout();
-                router.push("/login");
-              }}
-            >
-              Logout
-            </button>
 
             <button
               type="button"
@@ -179,7 +168,7 @@ export default function SessionSidebar() {
 
 
         {!collapsed && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 flex-1 space-y-2 overflow-y-auto min-h-0 pr-2">
             {isLoading && (
               <div
                 className="space-y-2"
@@ -301,21 +290,44 @@ export default function SessionSidebar() {
         )}
 
         {!collapsed && (
-          <>
-            <hr className="my-4 border-gray-300 dark:border-gray-700" />
+          <div className="mt-auto pb-4">
+            <hr className="my-5 border-border" />
+            
+            <div className="space-y-1">
+              <Link
+                href="/library"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-muted"
+              >
+                📄 Documents
+              </Link>
 
-            <h2 className="mb-2 font-bold">
-              Workspace
-            </h2>
+              {user?.role === "admin" && (
+                <>
+                  <hr className="my-3 border-border" />
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-muted"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Admin Console
+                  </Link>
+                </>
+              )}
 
-            <Link
-              href="/library"
-              className="block rounded border border-gray-300 p-2 hover:bg-muted dark:border-gray-700"
-            >
-              Library
-            </Link>
+              <hr className="my-3 border-border" />
 
-          </>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-muted"
+                onClick={() => {
+                  logout();
+                  router.push("/login");
+                }}
+              >
+                🚪 Logout
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </aside>

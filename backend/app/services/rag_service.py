@@ -1,6 +1,11 @@
 import logging
 import time
 
+from app.core.audit_logger import (
+    log_chat_event,
+    log_llm_event,
+    log_retrieval_event,
+)
 from app.core.config import settings
 from app.core.metrics import CHAT_REQUESTS
 from app.rag.generator import Generator
@@ -53,15 +58,13 @@ class RAGService:
             top_k=top_k,
         )
         retrieval_time = time.time() - retrieval_start
-        logger.info(
-            "Retrieval completed in %.3fs (%d chunks)",
-            retrieval_time,
-            len(retrieved_chunks),
-        )
-        logger.info(
-            "Retrieval Mode=%s Retrieved=%d",
-            settings.RETRIEVAL_MODE,
-            len(retrieved_chunks),
+        log_retrieval_event(
+            action="retrieve",
+            query=retrieval_query,
+            user_id=str(current_user_id),
+            duration=round(retrieval_time, 2),
+            chunks_found=len(retrieved_chunks),
+            mode=settings.RETRIEVAL_MODE.value,
         )
 
         if not retrieved_chunks:
@@ -82,14 +85,18 @@ class RAGService:
             conversation_history=conversation_history,
         )
         generation_time = time.time() - generation_start
-        logger.info(
-            "Generation completed in %.3fs",
-            generation_time,
+        log_llm_event(
+            action="generate",
+            session_id="N/A",  # Not passed here currently
+            model=settings.CHAT_MODEL,
+            duration=round(generation_time, 2),
         )
 
-        logger.info(
-            "Total request %.3fs",
-            time.time() - request_start,
+        log_chat_event(
+            action="message_sent",
+            session_id="N/A",
+            user_id=str(current_user_id),
+            duration=round(time.time() - request_start, 2),
         )
 
         return {
@@ -127,15 +134,13 @@ class RAGService:
             top_k=top_k,
         )
         retrieval_time = time.time() - retrieval_start
-        logger.info(
-            "Retrieval completed in %.3fs (%d chunks)",
-            retrieval_time,
-            len(retrieved_chunks),
-        )
-        logger.info(
-            "Retrieval Mode=%s Retrieved=%d",
-            settings.RETRIEVAL_MODE,
-            len(retrieved_chunks),
+        log_retrieval_event(
+            action="retrieve_stream",
+            query=retrieval_query,
+            user_id=str(current_user_id),
+            duration=round(retrieval_time, 2),
+            chunks_found=len(retrieved_chunks),
+            mode=settings.RETRIEVAL_MODE.value,
         )
 
         sources = [
@@ -161,8 +166,10 @@ class RAGService:
         ):
             yield {"type": "token", "token": token}
 
-        logger.info(
-            "Total request %.3fs",
-            time.time() - request_start,
+        log_chat_event(
+            action="message_streamed",
+            session_id="N/A",
+            user_id=str(current_user_id),
+            duration=round(time.time() - request_start, 2),
         )
         yield {"type": "meta", "sources": sources, "final": True}
