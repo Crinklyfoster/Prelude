@@ -23,59 +23,79 @@ class IngestionService:
         file_path,
         current_user_id,
     ):
+        timings = {}
 
-        start_time = time.time()
+        total_start = time.perf_counter()
 
-        extract_start = time.time()
+        # -------------------------
+        # PDF Extraction
+        # -------------------------
+        stage = time.perf_counter()
         text = PDFProcessor.extract_text(file_path)
+        timings["extract"] = time.perf_counter() - stage
 
-        logger.info(
-            f"Document {document_id}: "
-            f"extraction took "
-            f"{time.time() - extract_start:.2f}s"
-        )
-
-        chunk_start = time.time()
+        # -------------------------
+        # Chunking
+        # -------------------------
+        stage = time.perf_counter()
         chunks = self.chunker.chunk_text(text)
+        timings["chunk"] = time.perf_counter() - stage
 
-        logger.info(
-            f"Document {document_id}: "
-            f"{len(chunks)} chunks created in "
-            f"{time.time() - chunk_start:.2f}s"
-        )
-
-        embedding_start = time.time()
+        # -------------------------
+        # Embedding (parallel)
+        # -------------------------
+        stage = time.perf_counter()
         embedded_chunks = self.embedder.generate_embeddings(chunks)
+        timings["embed"] = time.perf_counter() - stage
 
-        logger.info(
-            f"Document {document_id}: "
-            f"{len(embedded_chunks)} embeddings generated in "
-            f"{time.time() - embedding_start:.2f}s"
-        )
-
-        storage_start = time.time()
+        # -------------------------
+        # Vector Store
+        # -------------------------
+        stage = time.perf_counter()
         self.vector_store.add_chunks(
-            document_id,
-            current_user_id,
-            embedded_chunks,
+            document_id=document_id,
+            current_user_id=current_user_id,
+            embedded_chunks=embedded_chunks,
         )
+        timings["vector_store"] = time.perf_counter() - stage
 
+        # -------------------------
+        # BM25 Index
+        # -------------------------
+        stage = time.perf_counter()
         self.lexical_index.add_document(
             document_id=document_id,
             current_user_id=current_user_id,
             chunks=embedded_chunks,
         )
+        timings["lexical_index"] = time.perf_counter() - stage
+
+        total_time = time.perf_counter() - total_start
 
         logger.info(
-            f"Document {document_id}: "
-            f"stored in vector database in "
-            f"{time.time() - storage_start:.2f}s"
+            (
+                "Ingestion completed | "
+                "doc=%s | "
+                "chunks=%d | "
+                "extract=%.2fs | "
+                "chunk=%.2fs | "
+                "embed=%.2fs | "
+                "vector=%.2fs | "
+                "bm25=%.2fs | "
+                "total=%.2fs"
+            ),
+            document_id,
+            len(chunks),
+            timings["extract"],
+            timings["chunk"],
+            timings["embed"],
+            timings["vector_store"],
+            timings["lexical_index"],
+            total_time,
         )
 
-        logger.info(
-            f"Document {document_id}: "
-            f"ingestion completed in "
-            f"{time.time() - start_time:.2f}s"
-        )
-
-        return len(chunks)
+        return {
+            "chunk_count": len(chunks),
+            "timings": timings,
+            "total_time": total_time,
+        }
