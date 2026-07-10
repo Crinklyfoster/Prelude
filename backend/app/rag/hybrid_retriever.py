@@ -31,26 +31,27 @@ class HybridRetriever:
             settings.SPARSE_TOP_K,
         )
 
-        if timer:
-            timer.start("dense")
-        dense_results = self.dense.retrieve(
-            query=query,
-            current_user_id=current_user_id,
-            document_ids=document_ids,
-            top_k=candidate_k,
-        )
-        if timer:
-            timer.stop("dense")
-        if timer:
-            timer.start("bm25")
-        sparse_results = self.sparse.search(
-            query=query,
-            current_user_id=current_user_id,
-            document_ids=document_ids,
-            top_k=candidate_k,
-        )
-        if timer:
-            timer.stop("bm25")
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            dense_future = executor.submit(
+                self.dense.retrieve,
+                query=query,
+                current_user_id=current_user_id,
+                document_ids=document_ids,
+                top_k=candidate_k,
+            )
+
+            sparse_future = executor.submit(
+                self.sparse.search,
+                query=query,
+                current_user_id=current_user_id,
+                document_ids=document_ids,
+                top_k=candidate_k,
+            )
+
+            dense_results = dense_future.result()
+            sparse_results = sparse_future.result()
         if timer:
             timer.start("rrf")
         fused = self._rrf(
