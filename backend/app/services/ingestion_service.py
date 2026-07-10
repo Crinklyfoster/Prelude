@@ -39,6 +39,13 @@ class IngestionService:
         # -------------------------
         stage = time.perf_counter()
         chunks = self.chunker.chunk_text(text)
+        
+        logger.info(
+            "Chunking | total=%d | avg_size=%.1f",
+            len(chunks),
+            sum(int(c["length"]) for c in chunks) / len(chunks) if chunks else 0,
+        )
+        
         timings["chunk"] = time.perf_counter() - stage
 
         # -------------------------

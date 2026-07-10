@@ -35,9 +35,9 @@ class ChromaVectorStore:
                 {
                     "document_id": str(document_id),
                     "user_id": str(current_user_id),
-                    "chunk_id": str(
-                        chunk["chunk_id"]
-                    ),  # Chroma stub requires str
+                    "chunk_id": str(chunk["chunk_id"]),
+                    "chunk_hash": chunk["hash"],
+                    "chunk_length": chunk["length"],
                 }
             )
 

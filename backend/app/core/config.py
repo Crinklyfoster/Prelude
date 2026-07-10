@@ -16,6 +16,22 @@ class Settings(BaseSettings):
     RETRIEVAL_MODE: RetrievalMode = RetrievalMode.HYBRID
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
+    ENABLE_CHUNK_DEDUP: bool = True
+    MIN_CHUNK_LENGTH: int = 120
+    MAX_CHUNK_LENGTH: int = 1600
+    CHUNK_SEPARATORS: list[str] = [
+        "\n# ",
+        "\n## ",
+        "\n### ",
+        "\n\n",
+        "\n",
+        ". ",
+        "! ",
+        "? ",
+        "; ",
+        " ",
+        "",
+    ]
 
     # Retrieval Pipeline
     DENSE_TOP_K: int = 10
