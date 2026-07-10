@@ -66,10 +66,11 @@ class Settings(BaseSettings):
     # Generation
     # ----------------------------
     LLM_PROVIDER: str = "ollama"
-    GEMINI_API_KEY: str = ""
+    OLLAMA_MODEL: str = "qwen3:8b"
     GEMINI_MODEL: str = "gemini-2.5-flash"
-    XAI_API_KEY: str = ""
     GROK_MODEL: str = "grok-4"
+    GEMINI_API_KEY: str = ""
+    XAI_API_KEY: str = ""
 
     LLM_CONTEXT_WINDOW: int = 4096
     LLM_TEMPERATURE: float = 0.2
