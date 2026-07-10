@@ -37,42 +37,42 @@ class OllamaEmbedder:
             "length": chunk.get("length", 0),
         }
 
-    def generate_embeddings(self, chunks: list[dict]):
-        start = time.perf_counter()
-
-        embedded_chunks: list[dict | None] = [None] * len(chunks)
-
-        with ThreadPoolExecutor(
-            max_workers=settings.EMBEDDING_WORKERS
-        ) as executor:
-
-            future_map = {
-                executor.submit(self._embed_chunk, chunk): index
-                for index, chunk in enumerate(chunks)
-            }
-
-            for future in as_completed(future_map):
-                index = future_map[future]
-
-                try:
-                    embedded = future.result()
-                    embedded.pop("latency", None)
-                    embedded_chunks[index] = embedded
-
-                except Exception:
-                    logger.exception(
-                        "Failed embedding chunk %s",
-                        chunks[index]["chunk_id"],
-                    )
-                    raise
-
-        elapsed = time.perf_counter() - start
+    def generate_embeddings(self, chunks: list):
 
         logger.info(
-            "Embedded %d chunks in %.2fs (workers=%d)",
+            "Generating %d embeddings using %d workers",
             len(chunks),
-            elapsed,
             settings.EMBEDDING_WORKERS,
         )
 
-        return embedded_chunks
+        embeddings: list[dict | None] = [None] * len(chunks)
+
+        def worker(idx, chunk):
+
+            vector = self.generate_embedding(chunk["text"])
+
+            return (
+                idx,
+                {
+                    "chunk_id": chunk["chunk_id"],
+                    "text": chunk["text"],
+                    "embedding": vector,
+                },
+            )
+
+        with ThreadPoolExecutor(
+            max_workers=settings.EMBEDDING_WORKERS,
+        ) as executor:
+
+            futures = [
+                executor.submit(worker, idx, chunk)
+                for idx, chunk in enumerate(chunks)
+            ]
+
+            for future in as_completed(futures):
+
+                idx, result = future.result()
+
+                embeddings[idx] = result
+
+        return embeddings

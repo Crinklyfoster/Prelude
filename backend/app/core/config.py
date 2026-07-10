@@ -1,3 +1,4 @@
+import os
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -59,7 +60,7 @@ class Settings(BaseSettings):
     # ----------------------------
     CHAT_MODEL: str = "qwen3:8b"
     EMBEDDING_MODEL: str = "nomic-embed-text"
-    EMBEDDING_WORKERS: int = 4
+    EMBEDDING_WORKERS: int = max(2, os.cpu_count() or 4)
     EMBEDDING_BATCH_SIZE: int = 32
 
     # ----------------------------
