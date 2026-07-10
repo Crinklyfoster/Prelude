@@ -8,20 +8,57 @@ class Settings(BaseSettings):
     APP_NAME: str = "Enterprise RAG Assistant"
     DATABASE_URL: str
     DEBUG: bool = False
+
+    # ----------------------------
+    # Retrieval
+    # ----------------------------
     TOP_K: int = 3
     RETRIEVAL_MODE: RetrievalMode = RetrievalMode.HYBRID
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
+
+    # ----------------------------
+    # Ollama
+    # ----------------------------
     OLLAMA_HOST: str = "http://host.docker.internal:11434"
-    CHROMA_DB_PATH: str = "./chroma_db"
-    EMBEDDING_MODEL: str = "nomic-embed-text"
+    OLLAMA_KEEP_ALIVE: str = "5m"
+    OLLAMA_NUM_PARALLEL: int = 4
+    OLLAMA_MAX_QUEUE: int = 32
+
+    # ----------------------------
+    # Models
+    # ----------------------------
     CHAT_MODEL: str = "qwen3:8b"
+    EMBEDDING_MODEL: str = "nomic-embed-text"
+
+    # ----------------------------
+    # Generation
+    # ----------------------------
+    LLM_CONTEXT_WINDOW: int = 4096
+    LLM_TEMPERATURE: float = 0.2
+    LLM_MAX_TOKENS: int = 1024
+    ENABLE_STREAMING: bool = True
+
+    # ----------------------------
+    # Features
+    # ----------------------------
     ENABLE_QUERY_REWRITE: bool = True
     ENABLE_RERANKER: bool = False
+    BENCHMARK_MODE: bool = False
+
+    # ----------------------------
+    # Storage
+    # ----------------------------
+    CHROMA_DB_PATH: str = "./chroma_db"
+
+    # ----------------------------
+    # Auth
+    # ----------------------------
     SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     BOOTSTRAP_ADMIN_EMAIL: str = ""
+
     BACKEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3000",
