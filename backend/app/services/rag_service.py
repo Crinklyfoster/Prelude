@@ -63,6 +63,7 @@ class RAGService:
             current_user_id=current_user_id,
             document_ids=document_ids,
             top_k=top_k,
+            timer=timer,
         )
         retrieval_time = time.perf_counter() - retrieval_start
         timer.stop("retrieval")

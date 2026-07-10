@@ -71,6 +71,7 @@ class ChromaVectorStore:
             query_embeddings=[query_embedding],
             n_results=top_k,
             where=where,
+            include=["metadatas", "documents", "distances", "embeddings"],
         )
 
     def get_chunk(
@@ -88,6 +89,7 @@ class ChromaVectorStore:
             include=[
                 "documents",
                 "metadatas",
+                "embeddings",
             ],
         )
 
@@ -96,9 +98,14 @@ class ChromaVectorStore:
 
         assert result["documents"] is not None
         assert result["metadatas"] is not None
+        assert result["embeddings"] is not None
+        
+        metadata: dict = dict(result["metadatas"][0])
+        metadata["embedding"] = result["embeddings"][0]
+        
         return {
             "text": result["documents"][0],
-            "metadata": result["metadatas"][0],
+            "metadata": metadata,
         }
 
     def delete_document(self, document_id):

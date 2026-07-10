@@ -19,6 +19,7 @@ class Retriever:
         current_user_id,
         document_ids=None,
         top_k: int = settings.TOP_K,
+        timer=None,
     ):
         start = time.time()
 
@@ -37,11 +38,12 @@ class Retriever:
         documents = results["documents"][0]  # type: ignore[index]
         distances = results["distances"][0]  # type: ignore[index]
         metadatas = results["metadatas"][0]  # type: ignore[index]
+        embeddings = results["embeddings"][0]  # type: ignore[index]
 
         formatted_results = []
         seen_chunks = set()
 
-        for doc, distance, metadata in zip(documents, distances, metadatas):
+        for doc, distance, metadata, emb in zip(documents, distances, metadatas, embeddings):
             chunk_preview = doc[:150]
 
             if chunk_preview in seen_chunks:
@@ -49,12 +51,15 @@ class Retriever:
 
             seen_chunks.add(chunk_preview)
 
+            metadata_dict: dict = dict(metadata)
+            metadata_dict["embedding"] = emb
+
             formatted_results.append(
                 {
-                    "document_id": metadata.get("document_id"),
-                    "chunk_id": metadata.get("chunk_id"),
+                    "document_id": metadata_dict.get("document_id"),
+                    "chunk_id": metadata_dict.get("chunk_id"),
                     "text": doc,
-                    "metadata": metadata,
+                    "metadata": metadata_dict,
                     "dense_distance": distance,
                     "source": "dense",
                 }

@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
 
+    # Retrieval Pipeline
+    DENSE_TOP_K: int = 10
+    SPARSE_TOP_K: int = 10
+    FINAL_TOP_K: int = 3
+
+    ENABLE_MMR: bool = True
+    MMR_LAMBDA: float = 0.5
     # ----------------------------
     # Ollama
     # ----------------------------

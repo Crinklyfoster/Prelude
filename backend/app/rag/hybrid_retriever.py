@@ -20,34 +20,62 @@ class HybridRetriever:
         current_user_id: str | None,
         document_ids=None,
         top_k: int = 5,
+        timer=None,
     ) -> list[dict]:
+        if timer:
+            timer.start("dense")
         dense_results = self.dense.retrieve(
-            query,
+            query=query,
             current_user_id=current_user_id,
             document_ids=document_ids,
-            top_k=top_k * 2,
+            top_k=settings.DENSE_TOP_K,
         )
+        if timer:
+            timer.stop("dense")
 
+        if timer:
+            timer.start("bm25")
         sparse_results = self.sparse.search(
             query=query,
             current_user_id=current_user_id,
             document_ids=document_ids,
-            top_k=top_k * 2,
+            top_k=settings.SPARSE_TOP_K,
         )
+        if timer:
+            timer.stop("bm25")
 
+        if timer:
+            timer.start("rrf")
         fused = self._rrf(
             dense_results,
             sparse_results,
         )
+        if timer:
+            timer.stop("rrf")
+
+        from app.rag.mmr import MMR
+
+        if settings.ENABLE_MMR:
+            if timer:
+                timer.start("mmr")
+            fused = MMR.select(
+                fused,
+                top_k=settings.FINAL_TOP_K,
+                lambda_mult=settings.MMR_LAMBDA,
+            )
+            if timer:
+                timer.stop("mmr")
+        else:
+            fused = fused[:settings.FINAL_TOP_K]
 
         if settings.ENABLE_RERANKER:
             return self.reranker.rerank(
                 query=query,
                 chunks=fused,
-                top_k=top_k,
+                top_k=settings.FINAL_TOP_K,
             )
 
-        return fused[:top_k]
+        return fused
 
     def _rrf(
         self,
