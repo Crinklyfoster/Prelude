@@ -16,7 +16,7 @@ class HybridRetriever:
         self.sparse = BM25Retriever()
         self.reranker = IdentityReranker()
 
-        self.rrf_k = 60
+        self.rrf_k = settings.RRF_K
 
     def retrieve(
         self,
@@ -26,14 +26,10 @@ class HybridRetriever:
         top_k: int = 5,
         timer=None,
     ) -> list[dict]:
-        dense_k = max(
+        candidate_k = max(
+            settings.FINAL_TOP_K * 4,
             settings.DENSE_TOP_K,
-            settings.FINAL_TOP_K * 3,
-        )
-
-        bm25_k = max(
             settings.SPARSE_TOP_K,
-            settings.FINAL_TOP_K * 3,
         )
 
         dense_start = time.perf_counter()
@@ -43,7 +39,7 @@ class HybridRetriever:
             query=query,
             current_user_id=current_user_id,
             document_ids=document_ids,
-            top_k=dense_k,
+            top_k=candidate_k,
         )
         if timer:
             timer.stop("dense")
@@ -56,7 +52,7 @@ class HybridRetriever:
             query=query,
             current_user_id=current_user_id,
             document_ids=document_ids,
-            top_k=bm25_k,
+            top_k=candidate_k,
         )
         if timer:
             timer.stop("bm25")
@@ -73,11 +69,13 @@ class HybridRetriever:
             timer.stop("rrf")
         rrf_time = time.perf_counter() - rrf_start
 
-        logger.info(
-            "Retrieval | Dense %.3fs | BM25 %.3fs | RRF %.3fs",
-            dense_time,
-            bm25_time,
-            rrf_time,
+        confidence = (
+            max(
+                chunk["rrf_score"]
+                for chunk in fused
+            )
+            if fused
+            else 0.0
         )
 
         from app.rag.mmr import MMR
@@ -96,13 +94,16 @@ class HybridRetriever:
             fused = fused[:settings.FINAL_TOP_K]
 
         if settings.ENABLE_RERANKER:
-            return self.reranker.rerank(
+            fused = self.reranker.rerank(
                 query=query,
                 chunks=fused,
                 top_k=settings.FINAL_TOP_K,
             )
 
-        return fused
+        return {
+            "chunks": fused,
+            "confidence": confidence,
+        }
 
     def _rrf(
         self,

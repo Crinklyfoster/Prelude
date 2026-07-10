@@ -53,20 +53,70 @@ class RAGService:
         timer = BenchmarkTimer()
 
         timer.start("query_rewrite")
-        retrieval_query = self.rewriter.rewrite(question, conversation_history)
+        if settings.ENABLE_QUERY_REWRITE:
+            retrieval_query = self.rewriter.rewrite(
+                question,
+                conversation_history,
+            )
+        else:
+            retrieval_query = question
         timer.stop("query_rewrite")
 
         timer.start("retrieval")
         retrieval_start = time.perf_counter()
-        retrieved_chunks = self.retriever.retrieve(
+
+        cache_key = (
+            str(current_user_id),
+            tuple(sorted(document_ids or [])),
             retrieval_query,
-            current_user_id=current_user_id,
-            document_ids=document_ids,
-            top_k=top_k,
-            timer=timer,
         )
+
+        from app.rag.retrieval_cache import cache
+
+        cache_hit = False
+        if settings.ENABLE_RETRIEVAL_CACHE:
+            cached = cache.get(cache_key)
+            if cached is not None:
+                cache_hit = True
+                retrieval_result = cached
+            else:
+                retrieval_result = self.retriever.retrieve(
+                    retrieval_query,
+                    current_user_id=current_user_id,
+                    document_ids=document_ids,
+                    top_k=top_k,
+                    timer=timer,
+                )
+                cache[cache_key] = retrieval_result
+        else:
+            retrieval_result = self.retriever.retrieve(
+                retrieval_query,
+                current_user_id=current_user_id,
+                document_ids=document_ids,
+                top_k=top_k,
+                timer=timer,
+            )
+
+        if isinstance(retrieval_result, dict):
+            retrieved_chunks = retrieval_result["chunks"]
+            confidence = retrieval_result.get("confidence", 0.0)
+        else:
+            retrieved_chunks = retrieval_result
+            confidence = 0.0
+
         retrieval_time = time.perf_counter() - retrieval_start
         timer.stop("retrieval")
+
+        stage_times = {r.stage: r.duration_ms for r in timer.results}
+        logger.info(
+            "Retrieval | rewrite=%.2fms dense=%.2fms bm25=%.2fms rrf=%.2fms confidence=%.3f cache=%s",
+            stage_times.get("query_rewrite", 0.0),
+            stage_times.get("dense", 0.0),
+            stage_times.get("bm25", 0.0),
+            stage_times.get("rrf", 0.0),
+            confidence,
+            "HIT" if cache_hit else "MISS",
+        )
 
         log_retrieval_event(
             action="retrieve",
@@ -86,8 +136,16 @@ class RAGService:
                 "sources": [],
             }
             if settings.ENABLE_BENCHMARKS:
-                response["benchmark"] = timer.as_dict()
-                logger.info("Benchmark %s", timer.as_dict())
+                stage_times = {r.stage: r.duration_ms for r in timer.results}
+                response["benchmark"] = {
+                    "query_rewrite_ms": int(stage_times.get("query_rewrite", 0.0)),
+                    "dense_ms": int(stage_times.get("dense", 0.0)),
+                    "bm25_ms": int(stage_times.get("bm25", 0.0)),
+                    "rrf_ms": int(stage_times.get("rrf", 0.0)),
+                    "cache": "HIT" if cache_hit else "MISS",
+                    "confidence": round(confidence, 3)
+                }
+                logger.info("Benchmark %s", response["benchmark"])
             return response
 
         timer.start("prompt")
@@ -133,8 +191,16 @@ class RAGService:
         }
 
         if settings.ENABLE_BENCHMARKS:
-            response["benchmark"] = timer.as_dict()
-            logger.info("Benchmark %s", timer.as_dict())
+            stage_times = {r.stage: r.duration_ms for r in timer.results}
+            response["benchmark"] = {
+                "query_rewrite_ms": int(stage_times.get("query_rewrite", 0.0)),
+                "dense_ms": int(stage_times.get("dense", 0.0)),
+                "bm25_ms": int(stage_times.get("bm25", 0.0)),
+                "rrf_ms": int(stage_times.get("rrf", 0.0)),
+                "cache": "HIT" if cache_hit else "MISS",
+                "confidence": round(confidence, 3)
+            }
+            logger.info("Benchmark %s", response["benchmark"])
 
         return response
 
@@ -149,15 +215,53 @@ class RAGService:
         request_start = time.perf_counter()
         CHAT_REQUESTS.inc()
 
-        retrieval_query = self.rewriter.rewrite(question, conversation_history)
+        if settings.ENABLE_QUERY_REWRITE:
+            retrieval_query = self.rewriter.rewrite(
+                question,
+                conversation_history,
+            )
+        else:
+            retrieval_query = question
 
         retrieval_start = time.perf_counter()
-        retrieved_chunks = self.retriever.retrieve(
+
+        cache_key = (
+            str(current_user_id),
+            tuple(sorted(document_ids or [])),
             retrieval_query,
-            current_user_id=current_user_id,
-            document_ids=document_ids,
-            top_k=top_k,
         )
+
+        from app.rag.retrieval_cache import cache
+
+        cache_hit = False
+        if settings.ENABLE_RETRIEVAL_CACHE:
+            cached = cache.get(cache_key)
+            if cached is not None:
+                cache_hit = True
+                retrieval_result = cached
+            else:
+                retrieval_result = self.retriever.retrieve(
+                    retrieval_query,
+                    current_user_id=current_user_id,
+                    document_ids=document_ids,
+                    top_k=top_k,
+                )
+                cache[cache_key] = retrieval_result
+        else:
+            retrieval_result = self.retriever.retrieve(
+                retrieval_query,
+                current_user_id=current_user_id,
+                document_ids=document_ids,
+                top_k=top_k,
+            )
+
+        if isinstance(retrieval_result, dict):
+            retrieved_chunks = retrieval_result["chunks"]
+            confidence = retrieval_result.get("confidence", 0.0)
+        else:
+            retrieved_chunks = retrieval_result
+            confidence = 0.0
+
         retrieval_time = time.perf_counter() - retrieval_start
         log_retrieval_event(
             action="retrieve_stream",

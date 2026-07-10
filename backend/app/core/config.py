@@ -34,9 +34,15 @@ class Settings(BaseSettings):
     ]
 
     # Retrieval Pipeline
-    DENSE_TOP_K: int = 10
-    SPARSE_TOP_K: int = 10
-    FINAL_TOP_K: int = 3
+    DENSE_TOP_K: int = 20
+    SPARSE_TOP_K: int = 20
+    FINAL_TOP_K: int = 5
+
+    RRF_K: int = 60
+
+    # Cache
+    ENABLE_RETRIEVAL_CACHE: bool = True
+    RETRIEVAL_CACHE_SIZE: int = 256
 
     ENABLE_MMR: bool = True
     MMR_LAMBDA: float = 0.5
