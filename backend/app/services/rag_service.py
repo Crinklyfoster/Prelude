@@ -45,19 +45,19 @@ class RAGService:
         document_ids: list[str] | None = None,
         top_k: int = settings.TOP_K,
     ):
-        request_start = time.time()
+        request_start = time.perf_counter()
         CHAT_REQUESTS.inc()
 
         retrieval_query = self.rewriter.rewrite(question, conversation_history)
 
-        retrieval_start = time.time()
+        retrieval_start = time.perf_counter()
         retrieved_chunks = self.retriever.retrieve(
             retrieval_query,
             current_user_id=current_user_id,
             document_ids=document_ids,
             top_k=top_k,
         )
-        retrieval_time = time.time() - retrieval_start
+        retrieval_time = time.perf_counter() - retrieval_start
         log_retrieval_event(
             action="retrieve",
             query=retrieval_query,
@@ -78,13 +78,13 @@ class RAGService:
 
         context = self.prompt_builder.build(retrieved_chunks)
 
-        generation_start = time.time()
+        generation_start = time.perf_counter()
         answer = self.generator.generate(
             context=context,
             question=question,
             conversation_history=conversation_history,
         )
-        generation_time = time.time() - generation_start
+        generation_time = time.perf_counter() - generation_start
         log_llm_event(
             action="generate",
             session_id="N/A",  # Not passed here currently
@@ -96,7 +96,7 @@ class RAGService:
             action="message_sent",
             session_id="N/A",
             user_id=str(current_user_id),
-            duration=round(time.time() - request_start, 2),
+            duration=round(time.perf_counter() - request_start, 2),
         )
 
         return {
@@ -121,19 +121,19 @@ class RAGService:
         document_ids: list[str] | None = None,
         top_k: int = settings.TOP_K,
     ):
-        request_start = time.time()
+        request_start = time.perf_counter()
         CHAT_REQUESTS.inc()
 
         retrieval_query = self.rewriter.rewrite(question, conversation_history)
 
-        retrieval_start = time.time()
+        retrieval_start = time.perf_counter()
         retrieved_chunks = self.retriever.retrieve(
             retrieval_query,
             current_user_id=current_user_id,
             document_ids=document_ids,
             top_k=top_k,
         )
-        retrieval_time = time.time() - retrieval_start
+        retrieval_time = time.perf_counter() - retrieval_start
         log_retrieval_event(
             action="retrieve_stream",
             query=retrieval_query,
@@ -170,6 +170,6 @@ class RAGService:
             action="message_streamed",
             session_id="N/A",
             user_id=str(current_user_id),
-            duration=round(time.time() - request_start, 2),
+            duration=round(time.perf_counter() - request_start, 2),
         )
         yield {"type": "meta", "sources": sources, "final": True}
