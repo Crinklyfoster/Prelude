@@ -1,0 +1,7 @@
+{
+  "venvPath": "/home/msis/Snehil/enterprise-rag-assistant/backend",
+  "venv": "venv",
+  "extraPaths": [
+    "/home/msis/Snehil/enterprise-rag-assistant/backend"
+  ]
+}
