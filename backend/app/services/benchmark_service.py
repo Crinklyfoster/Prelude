@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 
 @dataclass(slots=True)
