@@ -65,6 +65,12 @@ class Settings(BaseSettings):
     # ----------------------------
     # Generation
     # ----------------------------
+    LLM_PROVIDER: str = "ollama"
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    XAI_API_KEY: str = ""
+    GROK_MODEL: str = "grok-4"
+
     LLM_CONTEXT_WINDOW: int = 4096
     LLM_TEMPERATURE: float = 0.2
     LLM_MAX_TOKENS: int = 1024
