@@ -1,14 +1,17 @@
+import threading
 from typing import Any
 
 from google import genai
 from google.genai import errors as genai_errors
 
 from app.core.config import settings
-from app.llm.base import BaseLLMProvider
+from app.llm.base import BaseLLMProvider, TokenBucket
 from app.llm.errors import FatalProviderError, RetryableProviderError
 
 
 class GeminiProvider(BaseLLMProvider):
+    _semaphore = threading.BoundedSemaphore(settings.GEMINI_MAX_CONCURRENT)
+    _bucket = TokenBucket(settings.GEMINI_RPM, settings.GEMINI_RPM / 60.0)
 
     def __init__(self, model: str):
         self.model = model
@@ -28,20 +31,29 @@ class GeminiProvider(BaseLLMProvider):
             conversation_history,
         )
 
+        if not self._semaphore.acquire(blocking=False):
+            raise RetryableProviderError("Gemini concurrency limit reached")
+
         try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-            )
-            return response.text or ""
-        except genai_errors.APIError as e:
-            if e.code in [429, 503, 504]:
-                raise RetryableProviderError(str(e))
-            raise FatalProviderError(str(e))
-        except Exception as e:
-            if "timeout" in str(e).lower() or "connection" in str(e).lower():
-                raise RetryableProviderError(str(e))
-            raise FatalProviderError(str(e))
+            if not self._bucket.consume():
+                raise RetryableProviderError("Gemini rate limit (RPM) reached")
+
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                )
+                return response.text or ""
+            except genai_errors.APIError as e:
+                if e.code in [429, 503, 504]:
+                    raise RetryableProviderError(str(e))
+                raise FatalProviderError(str(e))
+            except Exception as e:
+                if "timeout" in str(e).lower() or "connection" in str(e).lower():
+                    raise RetryableProviderError(str(e))
+                raise FatalProviderError(str(e))
+        finally:
+            self._semaphore.release()
 
     def stream_generate(
         self,
@@ -55,22 +67,31 @@ class GeminiProvider(BaseLLMProvider):
             conversation_history,
         )
 
+        if not self._semaphore.acquire(blocking=False):
+            raise RetryableProviderError("Gemini concurrency limit reached")
+
         try:
-            response = self.client.models.generate_content_stream(
-                model=self.model,
-                contents=prompt,
-            )
-            for chunk in response:
-                if chunk.text:
-                    yield chunk.text
-        except genai_errors.APIError as e:
-            if e.code in [429, 503, 504]:
-                raise RetryableProviderError(str(e))
-            raise FatalProviderError(str(e))
-        except Exception as e:
-            if "timeout" in str(e).lower() or "connection" in str(e).lower():
-                raise RetryableProviderError(str(e))
-            raise FatalProviderError(str(e))
+            if not self._bucket.consume():
+                raise RetryableProviderError("Gemini rate limit (RPM) reached")
+
+            try:
+                response = self.client.models.generate_content_stream(
+                    model=self.model,
+                    contents=prompt,
+                )
+                for chunk in response:
+                    if chunk.text:
+                        yield chunk.text
+            except genai_errors.APIError as e:
+                if e.code in [429, 503, 504]:
+                    raise RetryableProviderError(str(e))
+                raise FatalProviderError(str(e))
+            except Exception as e:
+                if "timeout" in str(e).lower() or "connection" in str(e).lower():
+                    raise RetryableProviderError(str(e))
+                raise FatalProviderError(str(e))
+        finally:
+            self._semaphore.release()
 
     def health(self):
         try:

@@ -77,6 +77,12 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GROQ_API_KEY: str = ""
 
+    # Cloud Provider Limits
+    GROQ_MAX_CONCURRENT: int = 5
+    GROQ_RPM: int = 60
+    GEMINI_MAX_CONCURRENT: int = 5
+    GEMINI_RPM: int = 60
+
     LLM_CONTEXT_WINDOW: int = 4096
     LLM_TEMPERATURE: float = 0.2
     LLM_MAX_TOKENS: int = 1024
