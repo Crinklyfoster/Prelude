@@ -58,5 +58,7 @@ class GeminiProvider(BaseLLMProvider):
         try:
             self.client.models.list()
             return "healthy"
-        except Exception:
+        except Exception as e:
+            if "503" in str(e):
+                return "degraded"
             return "unhealthy"

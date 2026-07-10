@@ -1,18 +1,21 @@
 # LLM Benchmark Report Card
 
-This report summarizes the performance of the `/chat` endpoint (LLM generation) across different models and user loads.
+This report summarizes the performance of the `/chat` endpoint (LLM generation) across different models.
 
-| Model | Users | Requests | Failures | Median (ms) | Avg (ms) | Req/s |
-|-------|-------|----------|----------|-------------|----------|-------|
-| gemma3-4b | 10 | 874 | 0 | 72 | 69.56537746797368 | 4.886902576979601 |
-| gemma3-4b | 1 | 55 | 0 | 73 | 73.87251474541368 | 0.466628819077127 |
-| gemma3-4b | 20 | 2832 | 0 | 69 | 67.00070251304045 | 9.458126016808636 |
-| gemma3-4b | 5 | 282 | 0 | 72 | 70.70076058870983 | 2.3737558299139216 |
-| qwen3-4b | 10 | 857 | 0 | 70 | 68.4743633325653 | 4.782026806907653 |
-| qwen3-4b | 1 | 58 | 0 | 71 | 70.01143315523976 | 0.4894193638340967 |
-| qwen3-4b | 20 | 2845 | 0 | 69 | 66.98779770579931 | 9.504589779827821 |
-| qwen3-4b | 5 | 285 | 0 | 72 | 71.19440026671917 | 2.395865256237816 |
-| qwen3-8b | 10 | 861 | 0 | 69 | 67.16856688384276 | 4.810721900446082 |
-| qwen3-8b | 1 | 57 | 0 | 73 | 76.78294938599912 | 0.48829763117141234 |
-| qwen3-8b | 20 | 2850 | 0 | 66 | 65.04702541894376 | 9.52175429221535 |
-| qwen3-8b | 5 | 282 | 0 | 69 | 68.79361984764799 | 2.3815634552070932 |
+| Provider | Model | Avg Latency | P95 | Requests | Failures |
+|----------|-------|-------------|-----|----------|----------|
+| Ollama | gemma3:4b | 70 ms | 89 ms | 874 | 0 |
+| Ollama | gemma3:4b | 74 ms | 94 ms | 55 | 0 |
+| Ollama | gemma3:4b | 67 ms | 90 ms | 2832 | 0 |
+| Ollama | gemma3:4b | 71 ms | 89 ms | 282 | 0 |
+| Ollama | gemma3:4b | 64 ms | 82 ms | 63 | 0 |
+| Ollama | qwen3:4b | 68 ms | 88 ms | 857 | 0 |
+| Ollama | qwen3:4b | 70 ms | 88 ms | 58 | 0 |
+| Ollama | qwen3:4b | 67 ms | 89 ms | 2845 | 0 |
+| Ollama | qwen3:4b | 71 ms | 87 ms | 285 | 0 |
+| Ollama | qwen3:4b | 65 ms | 84 ms | 65 | 0 |
+| Ollama | qwen3:8b | 67 ms | 85 ms | 861 | 0 |
+| Ollama | qwen3:8b | 77 ms | 87 ms | 57 | 0 |
+| Ollama | qwen3:8b | 65 ms | 86 ms | 2850 | 0 |
+| Ollama | qwen3:8b | 69 ms | 86 ms | 282 | 0 |
+| Ollama | qwen3:8b | 67 ms | 90 ms | 66 | 0 |
