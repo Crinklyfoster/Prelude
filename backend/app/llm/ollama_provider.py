@@ -11,8 +11,8 @@ logger = get_logger(__name__)
 
 
 class OllamaProvider(BaseLLMProvider):
-    def __init__(self, model_name: str = settings.CHAT_MODEL):
-        self.model_name = model_name
+    def __init__(self, model: str):
+        self.model = model
         self.client = ollama.Client(host=settings.OLLAMA_HOST)
 
 
@@ -38,7 +38,7 @@ class OllamaProvider(BaseLLMProvider):
         start = time.perf_counter()
 
         response = self.client.chat(
-            model=self.model_name,
+            model=self.model,
             messages=[
                 {
                     "role": "user",
@@ -67,7 +67,7 @@ class OllamaProvider(BaseLLMProvider):
                 "latency=%.3fs | "
                 "tok_per_sec=%.2f"
             ),
-            self.model_name,
+            self.model,
             len(prompt),
             token_count,
             total_time,
@@ -93,7 +93,7 @@ class OllamaProvider(BaseLLMProvider):
         token_count = 0
 
         stream = self.client.chat(
-            model=self.model_name,
+            model=self.model,
             messages=[
                 {
                     "role": "user",
@@ -118,7 +118,7 @@ class OllamaProvider(BaseLLMProvider):
 
                 logger.info(
                     "LLM | model=%s | TTFT=%.3fs",
-                    self.model_name,
+                    self.model,
                     first_token_time - start,
                 )
 
@@ -151,7 +151,7 @@ class OllamaProvider(BaseLLMProvider):
                 "total=%.3fs | "
                 "tok_per_sec=%.2f"
             ),
-            self.model_name,
+            self.model,
             len(prompt),
             token_count,
             (first_token_time - start)

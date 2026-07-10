@@ -1,5 +1,6 @@
 import time
 from typing import Any
+
 from openai import OpenAI
 
 from app.core.config import settings
@@ -11,7 +12,8 @@ logger = get_logger(__name__)
 
 class GroqProvider(BaseLLMProvider):
 
-    def __init__(self):
+    def __init__(self, model: str):
+        self.model = model
         self.client = OpenAI(
             api_key=settings.GROQ_API_KEY,
             base_url="https://api.groq.com/openai/v1",
@@ -33,7 +35,7 @@ class GroqProvider(BaseLLMProvider):
         start = time.time()
 
         response = self.client.chat.completions.create(
-            model=settings.GROQ_MODEL,
+            model=self.model,
             messages=[
                 {
                     "role": "user",
@@ -44,7 +46,7 @@ class GroqProvider(BaseLLMProvider):
 
         logger.info(
             "Provider=Groq Model=%s GenerationLatency=%.3fs",
-            settings.GROQ_MODEL,
+            self.model,
             time.time() - start,
         )
 
@@ -63,7 +65,7 @@ class GroqProvider(BaseLLMProvider):
         )
 
         response = self.client.chat.completions.create(
-            model=settings.GROQ_MODEL,
+            model=self.model,
             messages=[
                 {
                     "role": "user",

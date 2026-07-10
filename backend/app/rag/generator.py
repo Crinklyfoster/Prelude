@@ -1,24 +1,16 @@
-from app.core.config import settings
-from app.llm.registry import PROVIDERS
+from app.llm.provider_manager import ProviderManager
+from app.services.settings_service import SettingsService
 
 
 class Generator:
 
-    def __init__(self):
-
-        provider_cls = PROVIDERS.get(
-            settings.LLM_PROVIDER.lower()
-        )
-
-        if provider_cls is None:
-            raise ValueError(
-                f"Unsupported provider: {settings.LLM_PROVIDER}"
-            )
-
-        self.provider = provider_cls()
+    def _provider(self):
+        provider_name = SettingsService.get_provider()
+        model_name = SettingsService.get_model()
+        return ProviderManager.get(provider_name, model_name)
 
     def generate(self, *args, **kwargs):
-        return self.provider.generate(*args, **kwargs)
+        return self._provider().generate(*args, **kwargs)
 
     def stream_generate(self, *args, **kwargs):
-        return self.provider.stream_generate(*args, **kwargs)
+        return self._provider().stream_generate(*args, **kwargs)

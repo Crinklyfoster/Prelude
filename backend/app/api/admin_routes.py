@@ -5,7 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.database.db import get_db
 from app.dependencies.admin import require_admin
-from app.schemas.admin_settings import AdminSettingsResponse
+from app.schemas.admin_settings import (
+    AdminSettingsResponse,
+    ProviderUpdateRequest,
+)
 from app.services.admin_service import (
     admin_delete_document,
     delete_session,
@@ -18,7 +21,10 @@ from app.services.admin_service import (
     reindex_document,
     update_user_role,
 )
-from app.services.settings_service import get_admin_settings
+from app.services.settings_service import (
+    SettingsService,
+    get_admin_settings,
+)
 
 router = APIRouter(
     prefix="/admin",
@@ -147,3 +153,12 @@ def settings(
     current_user=Depends(require_admin),
 ):
     return get_admin_settings()
+
+
+@router.post("/settings/provider")
+def update_provider(
+    request: ProviderUpdateRequest,
+    current_user=Depends(require_admin),
+):
+    SettingsService.set_provider(request.provider, request.model)
+    return {"success": True, "provider": request.provider, "model": request.model}

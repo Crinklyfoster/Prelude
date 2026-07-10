@@ -7,6 +7,11 @@ class ProviderStatus(BaseModel):
     groq: bool
 
 
+class ProviderUpdateRequest(BaseModel):
+    provider: str
+    model: str
+
+
 class AdminSettingsResponse(BaseModel):
     version: str
     chat_model: str

@@ -8,7 +8,8 @@ from app.llm.base import BaseLLMProvider
 
 class GeminiProvider(BaseLLMProvider):
 
-    def __init__(self):
+    def __init__(self, model: str):
+        self.model = model
         self.client = genai.Client(
             api_key=settings.GEMINI_API_KEY
         )
@@ -26,7 +27,7 @@ class GeminiProvider(BaseLLMProvider):
         )
 
         response = self.client.models.generate_content(
-            model=settings.GEMINI_MODEL,
+            model=self.model,
             contents=prompt,
         )
 
@@ -38,11 +39,20 @@ class GeminiProvider(BaseLLMProvider):
         question: str,
         conversation_history: str = "",
     ) -> Any:
-        yield self.generate(
-            context=context,
-            question=question,
-            conversation_history=conversation_history,
+        prompt = self._build_prompt(
+            context,
+            question,
+            conversation_history,
         )
+
+        response = self.client.models.generate_content_stream(
+            model=self.model,
+            contents=prompt,
+        )
+
+        for chunk in response:
+            if chunk.text:
+                yield chunk.text
 
     def health(self):
         try:
