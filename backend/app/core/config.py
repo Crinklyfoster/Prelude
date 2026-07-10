@@ -68,9 +68,9 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "ollama"
     OLLAMA_MODEL: str = "qwen3:8b"
     GEMINI_MODEL: str = "gemini-2.5-flash"
-    GROK_MODEL: str = "grok-4"
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
     GEMINI_API_KEY: str = ""
-    XAI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
 
     LLM_CONTEXT_WINDOW: int = 4096
     LLM_TEMPERATURE: float = 0.2

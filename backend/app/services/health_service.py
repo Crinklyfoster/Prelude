@@ -1,5 +1,5 @@
 import chromadb
-import requests
+import requests  # type: ignore
 from sqlalchemy import text
 
 from app.core.config import settings
