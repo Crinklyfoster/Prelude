@@ -1,29 +1,5 @@
-import threading
-import time
 from abc import ABC, abstractmethod
 from typing import Any
-
-
-class TokenBucket:
-    def __init__(self, capacity: int, fill_rate: float):
-        self.capacity = float(capacity)
-        self._tokens = float(capacity)
-        self.fill_rate = fill_rate
-        self.last_update = time.time()
-        self._lock = threading.Lock()
-
-    def consume(self, tokens: int = 1) -> bool:
-        with self._lock:
-            now = time.time()
-            elapsed = now - self.last_update
-            self._tokens = min(self.capacity, self._tokens + elapsed * self.fill_rate)
-            self.last_update = now
-
-            if self._tokens >= tokens:
-                self._tokens -= tokens
-                return True
-            return False
-
 
 
 class BaseLLMProvider(ABC):

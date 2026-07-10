@@ -1,4 +1,3 @@
-import threading
 import time
 from typing import Any
 
@@ -7,15 +6,15 @@ from openai import OpenAI
 
 from app.core.config import settings
 from app.core.logger import get_logger
-from app.llm.base import BaseLLMProvider, TokenBucket
+from app.llm.base import BaseLLMProvider
+from app.llm.rate_limiter import ProviderRateLimiter
 from app.llm.errors import FatalProviderError, RetryableProviderError
 
 logger = get_logger(__name__)
 
 
 class GroqProvider(BaseLLMProvider):
-    _semaphore = threading.BoundedSemaphore(settings.GROQ_MAX_CONCURRENT)
-    _bucket = TokenBucket(settings.GROQ_RPM, settings.GROQ_RPM / 60.0)
+    _limiter = ProviderRateLimiter("Groq", settings.GROQ_MAX_CONCURRENT, settings.GROQ_RPM)
 
     def __init__(self, model: str):
         self.model = model
@@ -39,13 +38,7 @@ class GroqProvider(BaseLLMProvider):
 
         start = time.time()
 
-        if not self._semaphore.acquire(blocking=False):
-            raise RetryableProviderError("Groq concurrency limit reached")
-
-        try:
-            if not self._bucket.consume():
-                raise RetryableProviderError("Groq rate limit (RPM) reached")
-
+        with self._limiter:
             delays = [1, 2, 4]
             response = None
             for attempt in range(4):
@@ -83,8 +76,6 @@ class GroqProvider(BaseLLMProvider):
                     raise FatalProviderError(str(e))
             else:
                 raise FatalProviderError("Max retries exceeded")
-        finally:
-            self._semaphore.release()
 
         logger.info(
             "Provider=Groq Model=%s GenerationLatency=%.3fs",
@@ -106,13 +97,7 @@ class GroqProvider(BaseLLMProvider):
             conversation_history=conversation_history,
         )
 
-        if not self._semaphore.acquire(blocking=False):
-            raise RetryableProviderError("Groq concurrency limit reached")
-
-        try:
-            if not self._bucket.consume():
-                raise RetryableProviderError("Groq rate limit (RPM) reached")
-
+        with self._limiter:
             delays = [1, 2, 4]
             chunks_yielded = 0
             for attempt in range(4):
@@ -157,8 +142,8 @@ class GroqProvider(BaseLLMProvider):
                     raise FatalProviderError(str(e))
                 except Exception as e:
                     raise FatalProviderError(str(e))
-        finally:
-            self._semaphore.release()
+            
+            raise FatalProviderError("Max retries exceeded")
 
     def health(self):
         try:

@@ -6,13 +6,13 @@ from google import genai
 from google.genai import errors as genai_errors
 
 from app.core.config import settings
-from app.llm.base import BaseLLMProvider, TokenBucket
+from app.llm.base import BaseLLMProvider
+from app.llm.rate_limiter import ProviderRateLimiter
 from app.llm.errors import FatalProviderError, RetryableProviderError
 
 
 class GeminiProvider(BaseLLMProvider):
-    _semaphore = threading.BoundedSemaphore(settings.GEMINI_MAX_CONCURRENT)
-    _bucket = TokenBucket(settings.GEMINI_RPM, settings.GEMINI_RPM / 60.0)
+    _limiter = ProviderRateLimiter("Gemini", settings.GEMINI_MAX_CONCURRENT, settings.GEMINI_RPM)
 
     def __init__(self, model: str):
         self.model = model
@@ -32,13 +32,7 @@ class GeminiProvider(BaseLLMProvider):
             conversation_history,
         )
 
-        if not self._semaphore.acquire(blocking=False):
-            raise RetryableProviderError("Gemini concurrency limit reached")
-
-        try:
-            if not self._bucket.consume():
-                raise RetryableProviderError("Gemini rate limit (RPM) reached")
-
+        with self._limiter:
             delays = [1, 2, 4]
             for attempt in range(4):
                 try:
@@ -64,8 +58,6 @@ class GeminiProvider(BaseLLMProvider):
                     raise FatalProviderError(str(e))
             
             raise FatalProviderError("Max retries exceeded")
-        finally:
-            self._semaphore.release()
 
     def stream_generate(
         self,
@@ -79,13 +71,7 @@ class GeminiProvider(BaseLLMProvider):
             conversation_history,
         )
 
-        if not self._semaphore.acquire(blocking=False):
-            raise RetryableProviderError("Gemini concurrency limit reached")
-
-        try:
-            if not self._bucket.consume():
-                raise RetryableProviderError("Gemini rate limit (RPM) reached")
-
+        with self._limiter:
             delays = [1, 2, 4]
             chunks_yielded = 0
             for attempt in range(4):
@@ -115,8 +101,8 @@ class GeminiProvider(BaseLLMProvider):
                     if "timeout" in str(e).lower() or "connection" in str(e).lower():
                         raise RetryableProviderError(str(e))
                     raise FatalProviderError(str(e))
-        finally:
-            self._semaphore.release()
+            
+            raise FatalProviderError("Max retries exceeded")
 
     def health(self):
         try:

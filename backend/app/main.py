@@ -12,6 +12,7 @@ from app.api.document_routes import router as document_router
 from app.core.config import settings
 from app.core.logger import get_logger
 from app.services.health_service import HealthService
+from app.services.model_warmup_service import ModelWarmupService
 
 logger = get_logger(__name__)
 
@@ -24,6 +25,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
+
+
+@app.on_event("startup")
+def warm_models():
+
+    ModelWarmupService().warmup()
+
 
 app.add_middleware(
     CORSMiddleware,
