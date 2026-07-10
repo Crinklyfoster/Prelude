@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     ENABLE_QUERY_REWRITE: bool = True
     ENABLE_RERANKER: bool = False
     BENCHMARK_MODE: bool = False
+    ENABLE_BENCHMARKS: bool = False
 
     # ----------------------------
     # Storage

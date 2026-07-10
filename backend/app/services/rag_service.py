@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Any
 
 from app.core.audit_logger import (
     log_chat_event,
@@ -14,6 +15,7 @@ from app.rag.prompt_builder import PromptBuilder
 from app.rag.query_rewriter import QueryRewriter
 from app.rag.retrieval_mode import RetrievalMode
 from app.rag.retriever import Retriever
+from app.services.benchmark_service import BenchmarkTimer
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +50,13 @@ class RAGService:
         request_start = time.perf_counter()
         CHAT_REQUESTS.inc()
 
-        retrieval_query = self.rewriter.rewrite(question, conversation_history)
+        timer = BenchmarkTimer()
 
+        timer.start("query_rewrite")
+        retrieval_query = self.rewriter.rewrite(question, conversation_history)
+        timer.stop("query_rewrite")
+
+        timer.start("retrieval")
         retrieval_start = time.perf_counter()
         retrieved_chunks = self.retriever.retrieve(
             retrieval_query,
@@ -58,6 +65,8 @@ class RAGService:
             top_k=top_k,
         )
         retrieval_time = time.perf_counter() - retrieval_start
+        timer.stop("retrieval")
+
         log_retrieval_event(
             action="retrieve",
             query=retrieval_query,
@@ -68,16 +77,23 @@ class RAGService:
         )
 
         if not retrieved_chunks:
-            return {
+            response: dict[str, Any] = {
                 "question": question,
                 "answer": (
                     "I could not find that information in the document."
                 ),
                 "sources": [],
             }
+            if settings.ENABLE_BENCHMARKS:
+                response["benchmark"] = timer.as_dict()
+                logger.info("Benchmark %s", timer.as_dict())
+            return response
 
+        timer.start("prompt")
         context = self.prompt_builder.build(retrieved_chunks)
+        timer.stop("prompt")
 
+        timer.start("generation")
         generation_start = time.perf_counter()
         answer = self.generator.generate(
             context=context,
@@ -85,6 +101,8 @@ class RAGService:
             conversation_history=conversation_history,
         )
         generation_time = time.perf_counter() - generation_start
+        timer.stop("generation")
+
         log_llm_event(
             action="generate",
             session_id="N/A",  # Not passed here currently
@@ -99,7 +117,7 @@ class RAGService:
             duration=round(time.perf_counter() - request_start, 2),
         )
 
-        return {
+        response: dict[str, Any] = {
             "question": question,
             "answer": answer,
             "sources": [
@@ -112,6 +130,12 @@ class RAGService:
                 for chunk in retrieved_chunks
             ],
         }
+
+        if settings.ENABLE_BENCHMARKS:
+            response["benchmark"] = timer.as_dict()
+            logger.info("Benchmark %s", timer.as_dict())
+
+        return response
 
     def stream_answer(
         self,
