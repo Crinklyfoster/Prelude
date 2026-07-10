@@ -1,4 +1,5 @@
 import threading
+import time
 from typing import Any
 
 from google import genai
@@ -38,20 +39,31 @@ class GeminiProvider(BaseLLMProvider):
             if not self._bucket.consume():
                 raise RetryableProviderError("Gemini rate limit (RPM) reached")
 
-            try:
-                response = self.client.models.generate_content(
-                    model=self.model,
-                    contents=prompt,
-                )
-                return response.text or ""
-            except genai_errors.APIError as e:
-                if e.code in [429, 503, 504]:
-                    raise RetryableProviderError(str(e))
-                raise FatalProviderError(str(e))
-            except Exception as e:
-                if "timeout" in str(e).lower() or "connection" in str(e).lower():
-                    raise RetryableProviderError(str(e))
-                raise FatalProviderError(str(e))
+            delays = [1, 2, 4]
+            for attempt in range(4):
+                try:
+                    response = self.client.models.generate_content(
+                        model=self.model,
+                        contents=prompt,
+                    )
+                    return response.text or ""
+                except genai_errors.APIError as e:
+                    if e.code in [429, 500, 502, 503]:
+                        if attempt < 3:
+                            time.sleep(delays[attempt])
+                            continue
+                    if e.code in [429, 503, 504]:
+                        raise RetryableProviderError(str(e))
+                    raise FatalProviderError(str(e))
+                except Exception as e:
+                    if "timeout" in str(e).lower() or "connection" in str(e).lower():
+                        if attempt < 3:
+                            time.sleep(delays[attempt])
+                            continue
+                        raise RetryableProviderError(str(e))
+                    raise FatalProviderError(str(e))
+            
+            raise FatalProviderError("Max retries exceeded")
         finally:
             self._semaphore.release()
 
@@ -74,22 +86,35 @@ class GeminiProvider(BaseLLMProvider):
             if not self._bucket.consume():
                 raise RetryableProviderError("Gemini rate limit (RPM) reached")
 
-            try:
-                response = self.client.models.generate_content_stream(
-                    model=self.model,
-                    contents=prompt,
-                )
-                for chunk in response:
-                    if chunk.text:
-                        yield chunk.text
-            except genai_errors.APIError as e:
-                if e.code in [429, 503, 504]:
-                    raise RetryableProviderError(str(e))
-                raise FatalProviderError(str(e))
-            except Exception as e:
-                if "timeout" in str(e).lower() or "connection" in str(e).lower():
-                    raise RetryableProviderError(str(e))
-                raise FatalProviderError(str(e))
+            delays = [1, 2, 4]
+            chunks_yielded = 0
+            for attempt in range(4):
+                try:
+                    response = self.client.models.generate_content_stream(
+                        model=self.model,
+                        contents=prompt,
+                    )
+                    for chunk in response:
+                        if chunk.text:
+                            yield chunk.text
+                            chunks_yielded += 1
+                    return
+                except genai_errors.APIError as e:
+                    if chunks_yielded == 0 and e.code in [429, 500, 502, 503]:
+                        if attempt < 3:
+                            time.sleep(delays[attempt])
+                            continue
+                    if e.code in [429, 503, 504]:
+                        raise RetryableProviderError(str(e))
+                    raise FatalProviderError(str(e))
+                except Exception as e:
+                    if chunks_yielded == 0 and ("timeout" in str(e).lower() or "connection" in str(e).lower()):
+                        if attempt < 3:
+                            time.sleep(delays[attempt])
+                            continue
+                    if "timeout" in str(e).lower() or "connection" in str(e).lower():
+                        raise RetryableProviderError(str(e))
+                    raise FatalProviderError(str(e))
         finally:
             self._semaphore.release()
 

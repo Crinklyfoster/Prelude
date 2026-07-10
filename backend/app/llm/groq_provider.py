@@ -46,27 +46,43 @@ class GroqProvider(BaseLLMProvider):
             if not self._bucket.consume():
                 raise RetryableProviderError("Groq rate limit (RPM) reached")
 
-            try:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt,
-                        }
-                    ],
-                )
-            except (
-                openai.APIConnectionError,
-                openai.RateLimitError,
-                openai.APITimeoutError,
-                openai.InternalServerError,
-            ) as e:
-                raise RetryableProviderError(str(e))
-            except (openai.AuthenticationError, openai.BadRequestError) as e:
-                raise FatalProviderError(str(e))
-            except Exception as e:
-                raise FatalProviderError(str(e))
+            delays = [1, 2, 4]
+            response = None
+            for attempt in range(4):
+                try:
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": prompt,
+                            }
+                        ],
+                    )
+                    break # Success!
+                except (
+                    openai.APIConnectionError,
+                    openai.RateLimitError,
+                    openai.APITimeoutError,
+                    openai.InternalServerError,
+                ) as e:
+                    should_retry = False
+                    if isinstance(e, (openai.APIConnectionError, openai.APITimeoutError)):
+                        should_retry = True
+                    elif getattr(e, 'status_code', None) in [429, 500, 502, 503]:
+                        should_retry = True
+                    
+                    if should_retry and attempt < 3:
+                        time.sleep(delays[attempt])
+                        continue
+                    
+                    raise RetryableProviderError(str(e))
+                except (openai.AuthenticationError, openai.BadRequestError) as e:
+                    raise FatalProviderError(str(e))
+                except Exception as e:
+                    raise FatalProviderError(str(e))
+            else:
+                raise FatalProviderError("Max retries exceeded")
         finally:
             self._semaphore.release()
 
@@ -97,34 +113,50 @@ class GroqProvider(BaseLLMProvider):
             if not self._bucket.consume():
                 raise RetryableProviderError("Groq rate limit (RPM) reached")
 
-            try:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt,
-                        }
-                    ],
-                    stream=True,
-                )
-                for chunk in response:
-                    if (
-                        chunk.choices
-                        and chunk.choices[0].delta.content
-                    ):
-                        yield chunk.choices[0].delta.content
-            except (
-                openai.APIConnectionError,
-                openai.RateLimitError,
-                openai.APITimeoutError,
-                openai.InternalServerError,
-            ) as e:
-                raise RetryableProviderError(str(e))
-            except (openai.AuthenticationError, openai.BadRequestError) as e:
-                raise FatalProviderError(str(e))
-            except Exception as e:
-                raise FatalProviderError(str(e))
+            delays = [1, 2, 4]
+            chunks_yielded = 0
+            for attempt in range(4):
+                try:
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": prompt,
+                            }
+                        ],
+                        stream=True,
+                    )
+                    for chunk in response:
+                        if (
+                            chunk.choices
+                            and chunk.choices[0].delta.content
+                        ):
+                            yield chunk.choices[0].delta.content
+                            chunks_yielded += 1
+                    return # Success!
+                except (
+                    openai.APIConnectionError,
+                    openai.RateLimitError,
+                    openai.APITimeoutError,
+                    openai.InternalServerError,
+                ) as e:
+                    should_retry = False
+                    if chunks_yielded == 0:
+                        if isinstance(e, (openai.APIConnectionError, openai.APITimeoutError)):
+                            should_retry = True
+                        elif getattr(e, 'status_code', None) in [429, 500, 502, 503]:
+                            should_retry = True
+                    
+                    if should_retry and attempt < 3:
+                        time.sleep(delays[attempt])
+                        continue
+                    
+                    raise RetryableProviderError(str(e))
+                except (openai.AuthenticationError, openai.BadRequestError) as e:
+                    raise FatalProviderError(str(e))
+                except Exception as e:
+                    raise FatalProviderError(str(e))
         finally:
             self._semaphore.release()
 
