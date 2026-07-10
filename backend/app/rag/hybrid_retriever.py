@@ -1,4 +1,3 @@
-import time
 from collections import defaultdict
 
 from app.core.config import settings
@@ -25,14 +24,13 @@ class HybridRetriever:
         document_ids=None,
         top_k: int = 5,
         timer=None,
-    ) -> list[dict]:
+    ) -> dict:
         candidate_k = max(
             settings.FINAL_TOP_K * 4,
             settings.DENSE_TOP_K,
             settings.SPARSE_TOP_K,
         )
 
-        dense_start = time.perf_counter()
         if timer:
             timer.start("dense")
         dense_results = self.dense.retrieve(
@@ -43,9 +41,6 @@ class HybridRetriever:
         )
         if timer:
             timer.stop("dense")
-        dense_time = time.perf_counter() - dense_start
-
-        bm25_start = time.perf_counter()
         if timer:
             timer.start("bm25")
         sparse_results = self.sparse.search(
@@ -56,9 +51,6 @@ class HybridRetriever:
         )
         if timer:
             timer.stop("bm25")
-        bm25_time = time.perf_counter() - bm25_start
-
-        rrf_start = time.perf_counter()
         if timer:
             timer.start("rrf")
         fused = self._rrf(
@@ -67,8 +59,6 @@ class HybridRetriever:
         )
         if timer:
             timer.stop("rrf")
-        rrf_time = time.perf_counter() - rrf_start
-
         confidence = (
             max(
                 chunk["rrf_score"]

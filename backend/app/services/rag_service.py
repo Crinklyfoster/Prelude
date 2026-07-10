@@ -109,7 +109,8 @@ class RAGService:
 
         stage_times = {r.stage: r.duration_ms for r in timer.results}
         logger.info(
-            "Retrieval | rewrite=%.2fms dense=%.2fms bm25=%.2fms rrf=%.2fms confidence=%.3f cache=%s",
+            "Retrieval | rewrite=%.2fms dense=%.2fms bm25=%.2fms "
+            "rrf=%.2fms confidence=%.3f cache=%s",
             stage_times.get("query_rewrite", 0.0),
             stage_times.get("dense", 0.0),
             stage_times.get("bm25", 0.0),
@@ -233,11 +234,9 @@ class RAGService:
 
         from app.rag.retrieval_cache import cache
 
-        cache_hit = False
         if settings.ENABLE_RETRIEVAL_CACHE:
             cached = cache.get(cache_key)
             if cached is not None:
-                cache_hit = True
                 retrieval_result = cached
             else:
                 retrieval_result = self.retriever.retrieve(
@@ -257,10 +256,8 @@ class RAGService:
 
         if isinstance(retrieval_result, dict):
             retrieved_chunks = retrieval_result["chunks"]
-            confidence = retrieval_result.get("confidence", 0.0)
         else:
             retrieved_chunks = retrieval_result
-            confidence = 0.0
 
         retrieval_time = time.perf_counter() - retrieval_start
         log_retrieval_event(

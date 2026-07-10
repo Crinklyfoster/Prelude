@@ -1,7 +1,6 @@
-from typing import cast
 
 import chromadb
-from chromadb.api.types import Documents, Embeddings, IDs, Metadatas, Where
+from chromadb.api.types import Documents, Embeddings, IDs, Metadatas
 
 
 class ChromaVectorStore:
