@@ -1,9 +1,13 @@
+import time
 from collections import defaultdict
 
 from app.core.config import settings
+from app.core.logger import get_logger
 from app.rag.bm25_retriever import BM25Retriever
 from app.rag.reranker import IdentityReranker
 from app.rag.retriever import Retriever
+
+logger = get_logger(__name__)
 
 
 class HybridRetriever:
@@ -22,28 +26,43 @@ class HybridRetriever:
         top_k: int = 5,
         timer=None,
     ) -> list[dict]:
+        dense_k = max(
+            settings.DENSE_TOP_K,
+            settings.FINAL_TOP_K * 3,
+        )
+
+        bm25_k = max(
+            settings.SPARSE_TOP_K,
+            settings.FINAL_TOP_K * 3,
+        )
+
+        dense_start = time.perf_counter()
         if timer:
             timer.start("dense")
         dense_results = self.dense.retrieve(
             query=query,
             current_user_id=current_user_id,
             document_ids=document_ids,
-            top_k=settings.DENSE_TOP_K,
+            top_k=dense_k,
         )
         if timer:
             timer.stop("dense")
+        dense_time = time.perf_counter() - dense_start
 
+        bm25_start = time.perf_counter()
         if timer:
             timer.start("bm25")
         sparse_results = self.sparse.search(
             query=query,
             current_user_id=current_user_id,
             document_ids=document_ids,
-            top_k=settings.SPARSE_TOP_K,
+            top_k=bm25_k,
         )
         if timer:
             timer.stop("bm25")
+        bm25_time = time.perf_counter() - bm25_start
 
+        rrf_start = time.perf_counter()
         if timer:
             timer.start("rrf")
         fused = self._rrf(
@@ -52,6 +71,14 @@ class HybridRetriever:
         )
         if timer:
             timer.stop("rrf")
+        rrf_time = time.perf_counter() - rrf_start
+
+        logger.info(
+            "Retrieval | Dense %.3fs | BM25 %.3fs | RRF %.3fs",
+            dense_time,
+            bm25_time,
+            rrf_time,
+        )
 
         from app.rag.mmr import MMR
 

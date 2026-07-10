@@ -55,17 +55,12 @@ class ChromaVectorStore:
         document_ids=None,
         top_k=5,
     ):
-        user_filter: Where = {"user_id": {"$eq": str(current_user_id)}}
+        from app.rag.retrieval_filter import RetrievalFilter
 
-        if document_ids:
-            doc_filter: Where = {
-                "document_id": {
-                    "$in": [str(doc_id) for doc_id in document_ids]
-                }
-            }
-            where: Where = cast(Where, {"$and": [user_filter, doc_filter]})
-        else:
-            where = user_filter
+        where = RetrievalFilter.build(
+            user_id=current_user_id,
+            document_ids=document_ids,
+        )
 
         return self.collection.query(
             query_embeddings=[query_embedding],
