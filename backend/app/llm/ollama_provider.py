@@ -1,11 +1,13 @@
 import time
 from typing import Any
 
+import httpx
 import ollama
 
 from app.core.config import settings
 from app.core.logger import get_logger
 from app.llm.base import BaseLLMProvider
+from app.llm.errors import FatalProviderError, RetryableProviderError
 
 logger = get_logger(__name__)
 
@@ -37,17 +39,26 @@ class OllamaProvider(BaseLLMProvider):
 
         start = time.perf_counter()
 
-        response = self.client.chat(
-            model=self.model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            options=self._options(),
-            keep_alive=settings.OLLAMA_KEEP_ALIVE,
-        )
+        try:
+            response = self.client.chat(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                options=self._options(),
+                keep_alive=settings.OLLAMA_KEEP_ALIVE,
+            )
+        except ollama.ResponseError as e:
+            if e.status_code in [429, 503, 504]:
+                raise RetryableProviderError(str(e))
+            raise FatalProviderError(str(e))
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
+            raise RetryableProviderError(str(e))
+        except Exception as e:
+            raise FatalProviderError(str(e))
 
         total_time = time.perf_counter() - start
 
@@ -92,37 +103,46 @@ class OllamaProvider(BaseLLMProvider):
         first_token_time = None
         token_count = 0
 
-        stream = self.client.chat(
-            model=self.model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            stream=True,
-            options=self._options(),
-            keep_alive=settings.OLLAMA_KEEP_ALIVE,
-        )
+        try:
+            stream = self.client.chat(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                stream=True,
+                options=self._options(),
+                keep_alive=settings.OLLAMA_KEEP_ALIVE,
+            )
 
-        for chunk in stream:
-            token = chunk["message"].get("content", "")
+            for chunk in stream:
+                token = chunk["message"].get("content", "")
 
-            if not token:
-                continue
+                if not token:
+                    continue
 
-            token_count += 1
+                token_count += 1
 
-            if first_token_time is None:
-                first_token_time = time.perf_counter()
+                if first_token_time is None:
+                    first_token_time = time.perf_counter()
 
-                logger.info(
-                    "LLM | model=%s | TTFT=%.3fs",
-                    self.model,
-                    first_token_time - start,
-                )
+                    logger.info(
+                        "LLM | model=%s | TTFT=%.3fs",
+                        self.model,
+                        first_token_time - start,
+                    )
 
-            yield token
+                yield token
+        except ollama.ResponseError as e:
+            if e.status_code in [429, 503, 504]:
+                raise RetryableProviderError(str(e))
+            raise FatalProviderError(str(e))
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
+            raise RetryableProviderError(str(e))
+        except Exception as e:
+            raise FatalProviderError(str(e))
 
         end = time.perf_counter()
 

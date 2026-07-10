@@ -1,11 +1,13 @@
 import time
 from typing import Any
 
+import openai
 from openai import OpenAI
 
 from app.core.config import settings
 from app.core.logger import get_logger
 from app.llm.base import BaseLLMProvider
+from app.llm.errors import FatalProviderError, RetryableProviderError
 
 logger = get_logger(__name__)
 
@@ -34,15 +36,27 @@ class GroqProvider(BaseLLMProvider):
 
         start = time.time()
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-        )
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+            )
+        except (
+            openai.APIConnectionError,
+            openai.RateLimitError,
+            openai.APITimeoutError,
+            openai.InternalServerError,
+        ) as e:
+            raise RetryableProviderError(str(e))
+        except (openai.AuthenticationError, openai.BadRequestError) as e:
+            raise FatalProviderError(str(e))
+        except Exception as e:
+            raise FatalProviderError(str(e))
 
         logger.info(
             "Provider=Groq Model=%s GenerationLatency=%.3fs",
@@ -64,24 +78,34 @@ class GroqProvider(BaseLLMProvider):
             conversation_history=conversation_history,
         )
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            stream=True,
-        )
-
-        for chunk in response:
-
-            if (
-                chunk.choices
-                and chunk.choices[0].delta.content
-            ):
-                yield chunk.choices[0].delta.content
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                stream=True,
+            )
+            for chunk in response:
+                if (
+                    chunk.choices
+                    and chunk.choices[0].delta.content
+                ):
+                    yield chunk.choices[0].delta.content
+        except (
+            openai.APIConnectionError,
+            openai.RateLimitError,
+            openai.APITimeoutError,
+            openai.InternalServerError,
+        ) as e:
+            raise RetryableProviderError(str(e))
+        except (openai.AuthenticationError, openai.BadRequestError) as e:
+            raise FatalProviderError(str(e))
+        except Exception as e:
+            raise FatalProviderError(str(e))
 
     def health(self):
         try:

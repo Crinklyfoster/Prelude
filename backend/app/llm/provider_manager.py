@@ -15,6 +15,7 @@ class ProviderManager:
         name: {"requests": 0, "failures": 0, "total_latency_ms": 0.0}
         for name in PROVIDERS
     }
+    _last_failover = None
 
     @classmethod
     def get(cls, provider_name: str, model_name: str) -> BaseLLMProvider:
@@ -35,6 +36,43 @@ class ProviderManager:
             provider_instance = provider_cls(model=model_name)
             cls._cache[key] = provider_instance
             return provider_instance
+
+    @classmethod
+    def get_provider_priority(cls) -> list[str]:
+        active = SettingsService.get_provider().lower()
+        priority = [active]
+        for p in settings.LLM_PROVIDER_PRIORITY:
+            if p.lower() != active and p.lower() not in priority:
+                priority.append(p.lower())
+        return priority
+
+    @classmethod
+    def get_model_for_provider(cls, provider_name: str) -> str:
+        active = SettingsService.get_provider().lower()
+        if provider_name.lower() == active:
+            return SettingsService.get_model()
+        defaults = {
+            "ollama": settings.OLLAMA_MODEL,
+            "gemini": settings.GEMINI_MODEL,
+            "groq": settings.GROQ_MODEL,
+        }
+        return defaults.get(provider_name.lower(), "default")
+
+    @classmethod
+    def log_failover(cls, from_provider: str, to_provider: str, reason: str):
+        from datetime import datetime
+        with cls._lock:
+            cls._last_failover = {
+                "from": from_provider,
+                "to": to_provider,
+                "reason": reason,
+                "time": datetime.now().strftime("%Y-%m-%d %H:%M")
+            }
+
+    @classmethod
+    def get_last_failover(cls) -> dict | None:
+        with cls._lock:
+            return cls._last_failover
 
     @classmethod
     def track_metric(cls, provider_name: str, latency_ms: float, success: bool):

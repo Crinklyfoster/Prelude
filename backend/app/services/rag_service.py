@@ -155,7 +155,7 @@ class RAGService:
 
         timer.start("generation")
         generation_start = time.perf_counter()
-        answer = self.generator.generate(
+        answer, provider_meta = self.generator.generate(
             context=context,
             question=question,
             conversation_history=conversation_history,
@@ -193,7 +193,7 @@ class RAGService:
 
         if settings.ENABLE_BENCHMARKS:
             stage_times = {r.stage: r.duration_ms for r in timer.results}
-            response["benchmark"] = {
+            benchmark_data: dict[str, Any] = {
                 "query_rewrite_ms": int(stage_times.get("query_rewrite", 0.0)),
                 "dense_ms": int(stage_times.get("dense", 0.0)),
                 "bm25_ms": int(stage_times.get("bm25", 0.0)),
@@ -201,6 +201,9 @@ class RAGService:
                 "cache": "HIT" if cache_hit else "MISS",
                 "confidence": round(confidence, 3)
             }
+            if provider_meta:
+                benchmark_data.update(provider_meta)
+            response["benchmark"] = benchmark_data
             logger.info("Benchmark %s", response["benchmark"])
 
         return response
@@ -285,12 +288,16 @@ class RAGService:
 
         context = self.prompt_builder.build(retrieved_chunks)
 
-        for token in self.generator.stream_generate(
+        provider_meta = None
+        for chunk in self.generator.stream_generate(
             context=context,
             question=question,
             conversation_history=conversation_history,
         ):
-            yield {"type": "token", "token": token}
+            if isinstance(chunk, dict) and chunk.get("type") == "provider_meta":
+                provider_meta = chunk
+                continue
+            yield {"type": "token", "token": chunk}
 
         log_chat_event(
             action="message_streamed",
@@ -298,4 +305,4 @@ class RAGService:
             user_id=str(current_user_id),
             duration=round(time.perf_counter() - request_start, 2),
         )
-        yield {"type": "meta", "sources": sources, "final": True}
+        yield {"type": "meta", "sources": sources, "final": True, "provider_meta": provider_meta}

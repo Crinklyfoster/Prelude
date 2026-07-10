@@ -202,6 +202,7 @@ def get_providers(
             
     return {
         "active_provider": SettingsService.get_provider().lower(),
-        "providers": list(merged.values())
+        "providers": list(merged.values()),
+        "last_failover": ProviderManager.get_last_failover()
     }
 
