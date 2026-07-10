@@ -5,7 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.database.db import get_db
 from app.dependencies.admin import require_admin
-from app.schemas.admin_settings import AdminSettingsResponse
+from app.schemas.admin_settings import (
+    AdminSettingsResponse,
+    ProviderUpdateRequest,
+)
 from app.services.admin_service import (
     admin_delete_document,
     delete_session,
@@ -18,7 +21,10 @@ from app.services.admin_service import (
     reindex_document,
     update_user_role,
 )
-from app.services.settings_service import get_admin_settings
+from app.services.settings_service import (
+    SettingsService,
+    get_admin_settings,
+)
 
 router = APIRouter(
     prefix="/admin",
@@ -147,3 +153,56 @@ def settings(
     current_user=Depends(require_admin),
 ):
     return get_admin_settings()
+
+
+@router.post("/settings/provider")
+def update_provider(
+    request: ProviderUpdateRequest,
+    current_user=Depends(require_admin),
+):
+    SettingsService.set_provider(request.provider, request.model)
+    return {"success": True, "provider": request.provider, "model": request.model}
+
+@router.get("/providers")
+def get_providers(
+    current_user=Depends(require_admin),
+):
+    from app.llm.provider_manager import ProviderManager
+    from app.services.settings_service import SettingsService
+    
+    provider_list = ProviderManager.list_providers()
+    health_list = ProviderManager.health()
+    metrics_list = ProviderManager.get_metrics()
+    
+    # Merge them
+    merged = {}
+    for p in provider_list:
+        name = p["provider"]
+        merged[name] = {
+            "name": name,
+            "configured": p["configured"],
+            "active": p["active"],
+            "streaming": True, # All current providers support streaming
+            "status": "unhealthy",
+            "requests": 0,
+            "failures": 0,
+            "latency_ms": 0,
+            "model": SettingsService.get_model() if p["active"] else "default"
+        }
+    
+    for h in health_list:
+        if h["provider"] in merged:
+            merged[h["provider"]]["status"] = h["status"]
+            
+    for m in metrics_list:
+        if m["provider"] in merged:
+            merged[m["provider"]]["requests"] = m["requests"]
+            merged[m["provider"]]["failures"] = m["failures"]
+            merged[m["provider"]]["latency_ms"] = m["average_latency_ms"]
+            
+    return {
+        "active_provider": SettingsService.get_provider().lower(),
+        "providers": list(merged.values()),
+        "last_failover": ProviderManager.get_last_failover()
+    }
+

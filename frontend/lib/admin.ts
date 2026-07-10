@@ -28,6 +28,27 @@ export async function getDashboard(): Promise<DashboardStats> {
   return res.data;
 }
 
+export interface ProviderStat {
+  name: string;
+  model: string;
+  status: string;
+  active: boolean;
+  requests: number;
+  failures: number;
+  latency_ms: number;
+  streaming: boolean;
+}
+
+export interface ProvidersResponse {
+  active_provider: string;
+  providers: ProviderStat[];
+}
+
+export async function getProviders(): Promise<ProvidersResponse> {
+  const res = await api.get<ProvidersResponse>("/admin/providers");
+  return res.data;
+}
+
 // ── User Management ────────────────────────────────────────────────────────────
 
 export async function getUsers(): Promise<AdminUser[]> {

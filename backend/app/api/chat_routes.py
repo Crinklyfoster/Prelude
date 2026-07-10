@@ -112,7 +112,7 @@ def stream_chat(
         ):
             if chunk.get("type") == "token":
                 token = chunk.get("token", "")
-                if token:
+                if isinstance(token, str) and token:
                     full_response += token
                     yield _sse_pack("token", {"token": token})
             elif chunk.get("type") == "meta":
@@ -125,13 +125,13 @@ def stream_chat(
                     current_user_id=current_user.id,
                 )
 
-                yield _sse_pack(
-                    "meta",
-                    {
-                        "sources": chunk.get("sources", []),
-                        "final": chunk.get("final", True),
-                    },
-                )
+                meta_data = {
+                    "sources": chunk.get("sources", []),
+                    "final": chunk.get("final", True),
+                }
+                if chunk.get("provider_meta"):
+                    meta_data["provider_meta"] = chunk.get("provider_meta")
+                yield _sse_pack("meta", meta_data)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

@@ -1,3 +1,5 @@
+import os
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -59,12 +61,30 @@ class Settings(BaseSettings):
     # ----------------------------
     CHAT_MODEL: str = "qwen3:8b"
     EMBEDDING_MODEL: str = "nomic-embed-text"
-    EMBEDDING_WORKERS: int = 4
+    EMBEDDING_WORKERS: int = max(2, os.cpu_count() or 4)
     EMBEDDING_BATCH_SIZE: int = 32
 
     # ----------------------------
     # Generation
     # ----------------------------
+    LLM_PROVIDER: str = "ollama"
+    LLM_PROVIDER_PRIORITY: list[str] = [
+        "groq",
+        "gemini",
+        "ollama",
+    ]
+    OLLAMA_MODEL: str = "qwen3:8b"
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GEMINI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
+
+    # Cloud Provider Limits
+    GROQ_MAX_CONCURRENT: int = 5
+    GROQ_RPM: int = 60
+    GEMINI_MAX_CONCURRENT: int = 5
+    GEMINI_RPM: int = 60
+
     LLM_CONTEXT_WINDOW: int = 4096
     LLM_TEMPERATURE: float = 0.2
     LLM_MAX_TOKENS: int = 1024

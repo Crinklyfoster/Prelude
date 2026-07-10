@@ -1,5 +1,6 @@
 import time
 
+from app.core.config import settings
 from app.core.logger import get_logger
 from app.rag.chunker import DocumentChunker
 from app.rag.embedder import OllamaEmbedder
@@ -51,9 +52,20 @@ class IngestionService:
         # -------------------------
         # Embedding (parallel)
         # -------------------------
-        stage = time.perf_counter()
+        embedding_start = time.time()
+
         embedded_chunks = self.embedder.generate_embeddings(chunks)
-        timings["embed"] = time.perf_counter() - stage
+
+        embedding_time = time.time() - embedding_start
+
+        logger.info(
+            "Document %s: %d embeddings generated in %.2fs using %d workers",
+            document_id,
+            len(embedded_chunks),
+            embedding_time,
+            settings.EMBEDDING_WORKERS,
+        )
+        timings["embed"] = embedding_time
 
         # -------------------------
         # Vector Store

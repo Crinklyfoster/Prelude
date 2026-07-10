@@ -30,7 +30,7 @@ def log_document_event(
             "action": action,
             "document_id": document_id,
             "user_id": user_id,
-            "filename": filename,
+            "doc_filename": filename,
             **kwargs,
         },
     )
