@@ -7,13 +7,13 @@ class RetrievalFilter:
 
     @staticmethod
     def build(
-        user_id: str,
+        user_id: str | None,
         document_ids: list[str] | None = None,
     ) -> Where:
 
         user_filter: Where = cast(Where, {
             "user_id": {
-                "$eq": user_id,
+                "$eq": str(user_id),
             }
         })
         filters: list[Where] = [user_filter]
