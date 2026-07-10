@@ -1,7 +1,7 @@
 import time
-from app.llm.provider_manager import ProviderManager
-from app.services.settings_service import SettingsService
+
 from app.llm.errors import RetryableProviderError
+from app.llm.provider_manager import ProviderManager
 
 
 class Generator:
@@ -18,11 +18,14 @@ class Generator:
                 provider = ProviderManager.get(provider_name, model_name)
                 
                 result = provider.generate(*args, **kwargs)
-                ProviderManager.track_metric(provider_name, (time.perf_counter() - start) * 1000, True)
+                latency_ms = (time.perf_counter() - start) * 1000
+                ProviderManager.track_metric(provider_name, latency_ms, True)
                 
                 fallback = provider_name != requested_provider
                 if fallback:
-                    ProviderManager.log_failover(requested_provider, provider_name, last_error)
+                    ProviderManager.log_failover(
+                        requested_provider, provider_name, last_error or "Unknown error"
+                    )
                 
                 meta = {
                     "requested_provider": requested_provider,
@@ -34,11 +37,13 @@ class Generator:
                 return result, meta
                 
             except RetryableProviderError as e:
-                ProviderManager.track_metric(provider_name, (time.perf_counter() - start) * 1000, False)
+                latency_ms = (time.perf_counter() - start) * 1000
+                ProviderManager.track_metric(provider_name, latency_ms, False)
                 last_error = str(e)
                 continue
             except Exception:
-                ProviderManager.track_metric(provider_name, (time.perf_counter() - start) * 1000, False)
+                latency_ms = (time.perf_counter() - start) * 1000
+                ProviderManager.track_metric(provider_name, latency_ms, False)
                 raise
                 
         raise RuntimeError(f"No provider available. Last error: {last_error}")
@@ -59,7 +64,9 @@ class Generator:
                 
                 fallback = provider_name != requested_provider
                 if fallback:
-                    ProviderManager.log_failover(requested_provider, provider_name, last_error)
+                    ProviderManager.log_failover(
+                        requested_provider, provider_name, last_error or "Unknown error"
+                    )
                 
                 meta = {
                     "type": "provider_meta",
@@ -75,17 +82,20 @@ class Generator:
                         token_yielded = True
                     yield chunk
                     
-                ProviderManager.track_metric(provider_name, (time.perf_counter() - start) * 1000, True)
+                latency_ms = (time.perf_counter() - start) * 1000
+                ProviderManager.track_metric(provider_name, latency_ms, True)
                 return
                 
             except RetryableProviderError as e:
-                ProviderManager.track_metric(provider_name, (time.perf_counter() - start) * 1000, False)
+                latency_ms = (time.perf_counter() - start) * 1000
+                ProviderManager.track_metric(provider_name, latency_ms, False)
                 last_error = str(e)
                 if token_yielded:
                     raise
                 continue
             except Exception:
-                ProviderManager.track_metric(provider_name, (time.perf_counter() - start) * 1000, False)
+                latency_ms = (time.perf_counter() - start) * 1000
+                ProviderManager.track_metric(provider_name, latency_ms, False)
                 raise
                 
         raise RuntimeError(f"No provider available. Last error: {last_error}")

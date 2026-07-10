@@ -1,4 +1,3 @@
-import threading
 import time
 from typing import Any
 
@@ -7,8 +6,8 @@ from google.genai import errors as genai_errors
 
 from app.core.config import settings
 from app.llm.base import BaseLLMProvider
-from app.llm.rate_limiter import ProviderRateLimiter
 from app.llm.errors import FatalProviderError, RetryableProviderError
+from app.llm.rate_limiter import ProviderRateLimiter
 
 
 class GeminiProvider(BaseLLMProvider):
@@ -94,7 +93,10 @@ class GeminiProvider(BaseLLMProvider):
                         raise RetryableProviderError(str(e))
                     raise FatalProviderError(str(e))
                 except Exception as e:
-                    if chunks_yielded == 0 and ("timeout" in str(e).lower() or "connection" in str(e).lower()):
+                    error_msg = str(e).lower()
+                    if chunks_yielded == 0 and (
+                        "timeout" in error_msg or "connection" in error_msg
+                    ):
                         if attempt < 3:
                             time.sleep(delays[attempt])
                             continue

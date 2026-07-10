@@ -1,5 +1,5 @@
-import openai
 import ollama
+import openai
 from google import genai
 
 print("openai exceptions:", dir(openai))

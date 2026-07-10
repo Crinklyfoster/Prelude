@@ -1,10 +1,10 @@
 import threading
 from typing import Dict, Tuple
 
+from app.core.config import settings
 from app.llm.base import BaseLLMProvider
 from app.llm.registry import PROVIDERS
 from app.services.settings_service import SettingsService
-from app.core.config import settings
 
 
 class ProviderManager:
@@ -115,7 +115,10 @@ class ProviderManager:
         active_provider = SettingsService.get_provider().lower()
         
         for name, provider_cls in PROVIDERS.items():
-            model_to_use = active_model if name == active_provider else default_models.get(name, "default")
+            if name == active_provider:
+                model_to_use = active_model
+            else:
+                model_to_use = default_models.get(name, "default")
             
             key = (name, model_to_use)
             if key in cls._cache:

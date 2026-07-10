@@ -7,8 +7,8 @@ from openai import OpenAI
 from app.core.config import settings
 from app.core.logger import get_logger
 from app.llm.base import BaseLLMProvider
-from app.llm.rate_limiter import ProviderRateLimiter
 from app.llm.errors import FatalProviderError, RetryableProviderError
+from app.llm.rate_limiter import ProviderRateLimiter
 
 logger = get_logger(__name__)
 
