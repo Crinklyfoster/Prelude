@@ -33,6 +33,8 @@ class OllamaEmbedder:
             "text": chunk["text"],
             "embedding": vector,
             "latency": elapsed,
+            "hash": chunk.get("hash", ""),
+            "length": chunk.get("length", 0),
         }
 
     def generate_embeddings(self, chunks: list[dict]):

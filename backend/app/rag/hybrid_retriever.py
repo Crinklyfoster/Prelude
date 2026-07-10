@@ -1,9 +1,12 @@
 from collections import defaultdict
 
 from app.core.config import settings
+from app.core.logger import get_logger
 from app.rag.bm25_retriever import BM25Retriever
 from app.rag.reranker import IdentityReranker
 from app.rag.retriever import Retriever
+
+logger = get_logger(__name__)
 
 
 class HybridRetriever:
@@ -12,7 +15,7 @@ class HybridRetriever:
         self.sparse = BM25Retriever()
         self.reranker = IdentityReranker()
 
-        self.rrf_k = 60
+        self.rrf_k = settings.RRF_K
 
     def retrieve(
         self,
@@ -20,34 +23,77 @@ class HybridRetriever:
         current_user_id: str | None,
         document_ids=None,
         top_k: int = 5,
-    ) -> list[dict]:
-        dense_results = self.dense.retrieve(
-            query,
-            current_user_id=current_user_id,
-            document_ids=document_ids,
-            top_k=top_k * 2,
+        timer=None,
+    ) -> dict:
+        candidate_k = max(
+            settings.FINAL_TOP_K * 4,
+            settings.DENSE_TOP_K,
+            settings.SPARSE_TOP_K,
         )
 
+        if timer:
+            timer.start("dense")
+        dense_results = self.dense.retrieve(
+            query=query,
+            current_user_id=current_user_id,
+            document_ids=document_ids,
+            top_k=candidate_k,
+        )
+        if timer:
+            timer.stop("dense")
+        if timer:
+            timer.start("bm25")
         sparse_results = self.sparse.search(
             query=query,
             current_user_id=current_user_id,
             document_ids=document_ids,
-            top_k=top_k * 2,
+            top_k=candidate_k,
         )
-
+        if timer:
+            timer.stop("bm25")
+        if timer:
+            timer.start("rrf")
         fused = self._rrf(
             dense_results,
             sparse_results,
         )
+        if timer:
+            timer.stop("rrf")
+        confidence = (
+            max(
+                chunk["rrf_score"]
+                for chunk in fused
+            )
+            if fused
+            else 0.0
+        )
+
+        from app.rag.mmr import MMR
+
+        if settings.ENABLE_MMR:
+            if timer:
+                timer.start("mmr")
+            fused = MMR.select(
+                fused,
+                top_k=settings.FINAL_TOP_K,
+                lambda_mult=settings.MMR_LAMBDA,
+            )
+            if timer:
+                timer.stop("mmr")
+        else:
+            fused = fused[:settings.FINAL_TOP_K]
 
         if settings.ENABLE_RERANKER:
-            return self.reranker.rerank(
+            fused = self.reranker.rerank(
                 query=query,
                 chunks=fused,
-                top_k=top_k,
+                top_k=settings.FINAL_TOP_K,
             )
 
-        return fused[:top_k]
+        return {
+            "chunks": fused,
+            "confidence": confidence,
+        }
 
     def _rrf(
         self,

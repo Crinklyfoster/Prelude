@@ -1,7 +1,6 @@
-from typing import cast
 
 import chromadb
-from chromadb.api.types import Documents, Embeddings, IDs, Metadatas, Where
+from chromadb.api.types import Documents, Embeddings, IDs, Metadatas
 
 
 class ChromaVectorStore:
@@ -35,9 +34,9 @@ class ChromaVectorStore:
                 {
                     "document_id": str(document_id),
                     "user_id": str(current_user_id),
-                    "chunk_id": str(
-                        chunk["chunk_id"]
-                    ),  # Chroma stub requires str
+                    "chunk_id": str(chunk["chunk_id"]),
+                    "chunk_hash": chunk["hash"],
+                    "chunk_length": chunk["length"],
                 }
             )
 
@@ -55,22 +54,18 @@ class ChromaVectorStore:
         document_ids=None,
         top_k=5,
     ):
-        user_filter: Where = {"user_id": {"$eq": str(current_user_id)}}
+        from app.rag.retrieval_filter import RetrievalFilter
 
-        if document_ids:
-            doc_filter: Where = {
-                "document_id": {
-                    "$in": [str(doc_id) for doc_id in document_ids]
-                }
-            }
-            where: Where = cast(Where, {"$and": [user_filter, doc_filter]})
-        else:
-            where = user_filter
+        where = RetrievalFilter.build(
+            user_id=current_user_id,
+            document_ids=document_ids,
+        )
 
         return self.collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k,
             where=where,
+            include=["metadatas", "documents", "distances", "embeddings"],
         )
 
     def get_chunk(
@@ -88,6 +83,7 @@ class ChromaVectorStore:
             include=[
                 "documents",
                 "metadatas",
+                "embeddings",
             ],
         )
 
@@ -96,9 +92,14 @@ class ChromaVectorStore:
 
         assert result["documents"] is not None
         assert result["metadatas"] is not None
+        assert result["embeddings"] is not None
+        
+        metadata: dict = dict(result["metadatas"][0])
+        metadata["embedding"] = result["embeddings"][0]
+        
         return {
             "text": result["documents"][0],
-            "metadata": result["metadatas"][0],
+            "metadata": metadata,
         }
 
     def delete_document(self, document_id):

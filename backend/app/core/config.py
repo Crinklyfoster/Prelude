@@ -16,7 +16,36 @@ class Settings(BaseSettings):
     RETRIEVAL_MODE: RetrievalMode = RetrievalMode.HYBRID
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
+    ENABLE_CHUNK_DEDUP: bool = True
+    MIN_CHUNK_LENGTH: int = 120
+    MAX_CHUNK_LENGTH: int = 1600
+    CHUNK_SEPARATORS: list[str] = [
+        "\n# ",
+        "\n## ",
+        "\n### ",
+        "\n\n",
+        "\n",
+        ". ",
+        "! ",
+        "? ",
+        "; ",
+        " ",
+        "",
+    ]
 
+    # Retrieval Pipeline
+    DENSE_TOP_K: int = 20
+    SPARSE_TOP_K: int = 20
+    FINAL_TOP_K: int = 5
+
+    RRF_K: int = 60
+
+    # Cache
+    ENABLE_RETRIEVAL_CACHE: bool = True
+    RETRIEVAL_CACHE_SIZE: int = 256
+
+    ENABLE_MMR: bool = True
+    MMR_LAMBDA: float = 0.5
     # ----------------------------
     # Ollama
     # ----------------------------

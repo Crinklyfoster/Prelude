@@ -1,0 +1,21 @@
+[
+  {
+    "question": "What is the objective of this document?",
+    "expected_answer_contains": [
+      "objective",
+      "goal"
+    ],
+    "expected_documents": [
+      "sample.pdf"
+    ]
+  },
+  {
+    "question": "Who authored this document?",
+    "expected_answer_contains": [
+      "John Doe"
+    ],
+    "expected_documents": [
+      "sample.pdf"
+    ]
+  }
+]
