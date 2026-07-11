@@ -5,4 +5,6 @@ export interface Message {
   content: string;
   sources?: Source[];
   timestamp: Date;
+  provider?: string;
+  latencyMs?: number;
 }

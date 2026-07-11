@@ -127,6 +127,7 @@ class RAGService:
         current_user_id=None,
         document_ids: list[str] | None = None,
         top_k: int = settings.TOP_K,
+        provider_override: str | None = None,
     ):
         request_start = time.perf_counter()
         CHAT_REQUESTS.inc()
@@ -179,14 +180,14 @@ class RAGService:
 
         timer.start("prompt")
         context = self.prompt_builder.build(retrieved_chunks)
+        prompt = self.prompt_builder.build_prompt(context, question, conversation_history)
         timer.stop("prompt")
 
         timer.start("generation")
         generation_start = time.perf_counter()
         answer, provider_meta = self.generator.generate(
-            context=context,
-            question=question,
-            conversation_history=conversation_history,
+            prompt=prompt,
+            provider_override=provider_override,
         )
         generation_time = time.perf_counter() - generation_start
         timer.stop("generation")
@@ -226,6 +227,7 @@ class RAGService:
         current_user_id=None,
         document_ids: list[str] | None = None,
         top_k: int = settings.TOP_K,
+        provider_override: str | None = None,
     ):
         request_start = time.perf_counter()
         CHAT_REQUESTS.inc()
@@ -254,12 +256,12 @@ class RAGService:
             return
 
         context = self.prompt_builder.build(retrieved_chunks)
+        prompt = self.prompt_builder.build_prompt(context, question, conversation_history)
 
         provider_meta = None
         for chunk in self.generator.stream_generate(
-            context=context,
-            question=question,
-            conversation_history=conversation_history,
+            prompt=prompt,
+            provider_override=provider_override,
         ):
             if isinstance(chunk, dict) and chunk.get("type") == "provider_meta":
                 provider_meta = chunk

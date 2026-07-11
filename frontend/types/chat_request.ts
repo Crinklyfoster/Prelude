@@ -1,6 +1,7 @@
 export interface ChatRequest {
   session_id: string;
   question: string;
+  provider?: string;
 }
 
 export interface ChatResponse {
@@ -15,6 +16,8 @@ export interface ChatMessage {
   sources?: Source[];
   timestamp?: Date;
   created_at?: string;
+  provider?: string;
+  latencyMs?: number;
 }
 
 export interface CreateSessionResponse {

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -8,6 +9,7 @@ class ChatRequest(BaseModel):
     session_id: str
     question: str
     document_ids: list[str] | None = None
+    provider: Literal["groq", "gemini"] | None = None
 
 
 class Source(BaseModel):

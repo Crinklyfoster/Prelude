@@ -27,15 +27,8 @@ class OllamaProvider(BaseLLMProvider):
 
     def generate(
         self,
-        context: str,
-        question: str,
-        conversation_history: str = "",
+        prompt: str,
     ) -> str:
-        prompt = self._build_prompt(
-            context=context,
-            question=question,
-            conversation_history=conversation_history,
-        )
 
         start = time.perf_counter()
 
@@ -89,15 +82,8 @@ class OllamaProvider(BaseLLMProvider):
 
     def stream_generate(
         self,
-        context: str,
-        question: str,
-        conversation_history: str = "",
+        prompt: str,
     ) -> Any:
-        prompt = self._build_prompt(
-            context=context,
-            question=question,
-            conversation_history=conversation_history,
-        )
 
         start = time.perf_counter()
         first_token_time = None

@@ -49,16 +49,8 @@ class GroqProvider(BaseLLMProvider):
 
     def generate(
         self,
-        context: str,
-        question: str,
-        conversation_history: str = "",
+        prompt: str,
     ) -> str:
-
-        prompt = self._build_prompt(
-            context=context,
-            question=question,
-            conversation_history=conversation_history,
-        )
 
         start = time.time()
 
@@ -91,16 +83,8 @@ class GroqProvider(BaseLLMProvider):
 
     def stream_generate(
         self,
-        context: str,
-        question: str,
-        conversation_history: str = "",
+        prompt: str,
     ) -> Any:
-
-        prompt = self._build_prompt(
-            context=context,
-            question=question,
-            conversation_history=conversation_history,
-        )
 
         with self._limiter:
             chunks_yielded = 0

@@ -41,3 +41,37 @@ class PromptBuilder:
             current_size += len(formatted)
 
         return "\n\n".join(context_parts)
+
+    def build_prompt(
+        self,
+        context: str,
+        question: str,
+        conversation_history: str,
+    ) -> str:
+        return f"""
+You are a helpful assistant.
+
+Use the provided document context and conversation history
+to answer the user's question.
+
+If the conversation contains references such as:
+"it", "that", "this", "they"
+use the conversation history to determine what those
+references mean.
+
+Only respond with:
+"I could not find that information in the document."
+
+when the document context contains no relevant information.
+
+Conversation History:
+{conversation_history}
+
+Document Context:
+{context}
+
+Current Question:
+{question}
+
+Answer:
+"""
