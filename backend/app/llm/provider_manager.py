@@ -187,8 +187,9 @@ class ProviderManager:
     def _generate_with_provider(
         cls, provider_name, requested_provider, last_error, start_time, prompt
     ):
-        from app.llm.errors import RetryableProviderError
         import time
+
+        from app.llm.errors import RetryableProviderError
         try:
             model_name = cls.get_model_for_provider(provider_name)
             provider_instance = cls.get(provider_name, model_name)
@@ -208,8 +209,9 @@ class ProviderManager:
 
     @classmethod
     def generate(cls, prompt: str, provider: str | None = None):
-        from app.llm.errors import RetryableProviderError
         import time
+
+        from app.llm.errors import RetryableProviderError
         priority = cls.get_provider_priority(override=provider)
         last_error = None
         requested_provider = priority[0]
@@ -229,8 +231,9 @@ class ProviderManager:
     def _stream_with_provider(
         cls, provider_name, requested_provider, last_error, start_time, prompt
     ):
-        from app.llm.errors import RetryableProviderError
         import time
+
+        from app.llm.errors import RetryableProviderError
         token_yielded = False
         try:
             model_name = cls.get_model_for_provider(provider_name)
@@ -257,8 +260,9 @@ class ProviderManager:
 
     @classmethod
     def stream_generate(cls, prompt: str, provider: str | None = None):
-        from app.llm.errors import RetryableProviderError
         import time
+
+        from app.llm.errors import RetryableProviderError
         priority = cls.get_provider_priority(override=provider)
         last_error = None
         requested_provider = priority[0]

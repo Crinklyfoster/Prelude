@@ -1,5 +1,6 @@
 from app.llm.provider_manager import ProviderManager
 
+
 class Generator:
     def generate(self, prompt: str, provider_override: str | None = None):
         return ProviderManager.generate(prompt=prompt, provider=provider_override)
