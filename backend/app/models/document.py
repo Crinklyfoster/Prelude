@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,7 +32,20 @@ class Document(Base):
         default=lambda: datetime.now(timezone.utc)
     )
 
+    sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
     user = relationship(
         "User",
         back_populates="documents",
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "sha256",
+            name="uq_user_document_sha256",
+        ),
     )

@@ -13,12 +13,21 @@ class Retriever:
         self.embedder = OllamaEmbedder()
         self.vector_store = ChromaVectorStore()
 
+    def user_has_documents(self, current_user_id) -> bool:
+        result = self.vector_store.collection.get(
+            where={"user_id": str(current_user_id)},
+            limit=1,
+            include=[]
+        )
+        return bool(result["ids"])
+
     def retrieve(
         self,
         query: str,
         current_user_id,
         document_ids=None,
         top_k: int = settings.TOP_K,
+        **kwargs,
     ):
         start = time.time()
 

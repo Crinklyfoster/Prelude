@@ -64,7 +64,10 @@ def create_document(
 
 @router.post(
     "/upload",
-    responses={400: {"description": "Only PDF files are supported"}},
+    responses={
+        400: {"description": "Only PDF files are supported"},
+        409: {"description": "Duplicate document"},
+    },
 )
 def upload_document(
     background_tasks: BackgroundTasks,
@@ -83,6 +86,12 @@ def upload_document(
         file=file,
         current_user_id=current_user.id,
     )
+
+    if result.get("error") == "duplicate":
+        raise HTTPException(
+            status_code=409,
+            detail="This document has already been uploaded.",
+        )
 
     background_tasks.add_task(
         process_document_background,

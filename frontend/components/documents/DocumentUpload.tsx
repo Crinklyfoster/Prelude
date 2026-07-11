@@ -46,8 +46,13 @@ export default function DocumentUpload() {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-    } catch {
-      toast.error("Upload failed");
+    } catch (error) {
+      const err = error as { response?: { status?: number } };
+      if (err?.response?.status === 409) {
+        toast.error("This PDF already exists in your library.");
+      } else {
+        toast.error("Upload failed");
+      }
     }
   };
 

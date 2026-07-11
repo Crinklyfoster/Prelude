@@ -1,7 +1,7 @@
 export interface ChatRequest {
   session_id: string;
   question: string;
-  provider?: string;
+  provider?: "groq" | "gemini";
 }
 
 export interface ChatResponse {

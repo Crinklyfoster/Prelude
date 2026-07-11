@@ -130,7 +130,7 @@ class ProviderManager:
         result = []
         default_models = {
             "ollama": "qwen3:8b",
-            "gemini": "gemini-2.5-flash",
+            "gemini": "gemini-3.5-flash",
             "groq": "llama-3.3-70b-versatile"
         }
         active_model = SettingsService.get_model()

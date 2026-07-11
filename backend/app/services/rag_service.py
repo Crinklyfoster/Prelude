@@ -140,9 +140,15 @@ class RAGService:
 
         timer.start("retrieval")
         retrieval_start = time.perf_counter()
-        retrieved_chunks, confidence, cache_hit = self._perform_retrieval(
-            retrieval_query, current_user_id, document_ids, top_k, timer
-        )
+        
+        has_documents = self.retriever.user_has_documents(current_user_id)
+        if has_documents:
+            retrieved_chunks, confidence, cache_hit = self._perform_retrieval(
+                retrieval_query, current_user_id, document_ids, top_k, timer
+            )
+        else:
+            retrieved_chunks, confidence, cache_hit = [], 0.0, False
+            
         retrieval_time = time.perf_counter() - retrieval_start
         timer.stop("retrieval")
 
@@ -168,14 +174,30 @@ class RAGService:
         )
 
         if not retrieved_chunks:
-            response: dict[str, Any] = {
+            timer.start("generation")
+
+            answer, provider_meta = self.generator.generate(
+                prompt=question,
+                provider_override=provider_override,
+            )
+
+            timer.stop("generation")
+
+            response = {
                 "question": question,
-                "answer": "I could not find that information in the document.",
+                "answer": answer,
                 "sources": [],
             }
+
             if settings.ENABLE_BENCHMARKS:
-                response["benchmark"] = self._format_benchmark(timer, cache_hit, confidence)
+                response["benchmark"] = self._format_benchmark(
+                    timer,
+                    cache_hit,
+                    confidence,
+                    provider_meta,
+                )
                 logger.info("Benchmark %s", response["benchmark"])
+
             return response
 
         timer.start("prompt")
@@ -235,9 +257,15 @@ class RAGService:
         retrieval_query = self._get_retrieval_query(question, conversation_history)
 
         retrieval_start = time.perf_counter()
-        retrieved_chunks, _, _ = self._perform_retrieval(
-            retrieval_query, current_user_id, document_ids, top_k
-        )
+        
+        has_documents = self.retriever.user_has_documents(current_user_id)
+        if has_documents:
+            retrieved_chunks, _, _ = self._perform_retrieval(
+                retrieval_query, current_user_id, document_ids, top_k
+            )
+        else:
+            retrieved_chunks = []
+            
         retrieval_time = time.perf_counter() - retrieval_start
         
         log_retrieval_event(
@@ -252,7 +280,27 @@ class RAGService:
         sources = self._format_sources(retrieved_chunks)
 
         if not retrieved_chunks:
-            yield {"type": "meta", "sources": [], "final": True}
+            provider_meta = None
+
+            for chunk in self.generator.stream_generate(
+                prompt=question,
+                provider_override=provider_override,
+            ):
+                if isinstance(chunk, dict) and chunk.get("type") == "provider_meta":
+                    provider_meta = chunk
+                    continue
+
+                yield {
+                    "type": "token",
+                    "token": chunk,
+                }
+
+            yield {
+                "type": "meta",
+                "sources": [],
+                "final": True,
+                "provider_meta": provider_meta,
+            }
             return
 
         context = self.prompt_builder.build(retrieved_chunks)
