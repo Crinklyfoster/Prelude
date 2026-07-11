@@ -4,6 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { getDashboard, getProviders } from "@/lib/admin";
 import StatCard from "@/components/admin/StatCard";
 
+function getStatusLabel(status: string) {
+  if (status === "healthy") return "🟢 Healthy";
+  if (status === "degraded") return "🟡 Degraded";
+  return "🔴 Unhealthy";
+}
+
 export default function DashboardGrid() {
   const { data: dashboardData, isLoading: isDashboardLoading, isError: isDashboardError } = useQuery({
     queryKey: ["admin-dashboard"],
@@ -20,9 +26,9 @@ export default function DashboardGrid() {
   if (isDashboardLoading || isProvidersLoading) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {[1, 2, 3, 4].map((i) => (
           <div
-            key={i}
+            key={`skeleton-card-${i}`}
             className="h-28 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 animate-pulse"
           />
         ))}
@@ -78,7 +84,7 @@ export default function DashboardGrid() {
                   <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white capitalize">{p.name}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{p.model}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                    {p.status === "healthy" ? "🟢 Healthy" : p.status === "degraded" ? "🟡 Degraded" : "🔴 Unhealthy"}
+                    {getStatusLabel(p.status)}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{p.active ? "✅" : ""}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-right text-gray-500 dark:text-gray-400">{p.latency_ms} ms</td>

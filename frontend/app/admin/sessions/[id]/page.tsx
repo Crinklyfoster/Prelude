@@ -40,9 +40,9 @@ export default function SessionDetailPage() {
       {/* Loading skeletons */}
       {isLoading && (
         <div className="space-y-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {[1, 2, 3, 4].map((i) => (
             <div
-              key={i}
+              key={`skel-msg-${i}`}
               className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}
             >
               <div

@@ -53,10 +53,11 @@ export default function DocumentUpload() {
 
   return (
     <div className="space-y-4 rounded-lg border border-gray-300 bg-white p-4 text-black dark:border-gray-700 dark:bg-gray-900 dark:text-white">
-      <label className="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-8 text-center hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
-        Click to select a document
+      <label htmlFor="document-upload" className="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-8 text-center hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+        Click to select a document{" "}
 
         <input
+          id="document-upload"
           ref={fileInputRef}
           type="file"
           multiple

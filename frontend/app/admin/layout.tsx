@@ -8,9 +8,9 @@ import Topbar from "@/components/admin/Topbar";
 
 export default function AdminLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   const router = useRouter();
   const { user, loading } = useAuth();
 

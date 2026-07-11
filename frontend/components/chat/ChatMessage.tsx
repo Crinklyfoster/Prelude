@@ -1,7 +1,27 @@
 "use client";
 
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+const markdownComponents: Components = {
+  table({ ...props }) {
+    return (
+      <div className="overflow-x-auto">
+        <table {...props} />
+      </div>
+    );
+  },
+  a({ ...props }) {
+    return (
+      <a
+        {...props}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 underline"
+      />
+    );
+  },
+};
 
 
 import { ChatMessage as Message } from "@/types/chat";
@@ -15,7 +35,7 @@ interface Props {
 
 export function ChatMessage({
   message,
-}: Props) {
+}: Readonly<Props>) {
   const isUser = message.role === "user";
 
   return (
@@ -32,25 +52,7 @@ export function ChatMessage({
         <div className="prose prose-neutral dark:prose-invert max-w-none">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
-            components={{
-              table({ ...props }) {
-                return (
-                  <div className="overflow-x-auto">
-                    <table {...props} />
-                  </div>
-                );
-              },
-              a({ ...props }) {
-                return (
-                  <a
-                    {...props}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline"
-                  />
-                );
-              },
-            }}
+            components={markdownComponents}
           >
             {message.content}
           </ReactMarkdown>

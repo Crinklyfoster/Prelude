@@ -10,7 +10,7 @@ export function EmptyState({
   icon,
   title,
   description,
-}: EmptyStateProps) {
+}: Readonly<EmptyStateProps>) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="mb-4 text-5xl">{icon}</div>

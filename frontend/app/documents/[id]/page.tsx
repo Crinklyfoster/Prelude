@@ -12,7 +12,7 @@ interface Props {
 
 export default function DocumentDetailsPage({
   params,
-}: Props) {
+}: Readonly<Props>) {
   const { id } = use(params);
   const { data, isLoading } = useDocument(id);
 

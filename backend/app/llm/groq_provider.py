@@ -23,6 +23,30 @@ class GroqProvider(BaseLLMProvider):
             base_url="https://api.groq.com/openai/v1",
         )
 
+    def _handle_request_error(
+        self, e: Exception, attempt: int, chunks_yielded: int = 0
+    ) -> None:
+        """Handles API errors and retries, raising exceptions if retries are exhausted."""
+        if isinstance(e, (openai.AuthenticationError, openai.BadRequestError)):
+            raise FatalProviderError(str(e))
+
+        if not isinstance(e, (
+            openai.APIConnectionError,
+            openai.RateLimitError,
+            openai.APITimeoutError,
+            openai.InternalServerError,
+        )):
+            raise FatalProviderError(str(e))
+
+        is_network_error = isinstance(e, (openai.APIConnectionError, openai.APITimeoutError))
+        is_retryable_status = getattr(e, 'status_code', None) in [429, 500, 502, 503]
+        
+        if chunks_yielded == 0 and attempt < 3 and (is_network_error or is_retryable_status):
+            time.sleep([1, 2, 4][attempt])
+            return
+            
+        raise RetryableProviderError(str(e))
+
     def generate(
         self,
         context: str,
@@ -39,7 +63,6 @@ class GroqProvider(BaseLLMProvider):
         start = time.time()
 
         with self._limiter:
-            delays = [1, 2, 4]
             response = None
             for attempt in range(4):
                 try:
@@ -53,27 +76,8 @@ class GroqProvider(BaseLLMProvider):
                         ],
                     )
                     break # Success!
-                except (
-                    openai.APIConnectionError,
-                    openai.RateLimitError,
-                    openai.APITimeoutError,
-                    openai.InternalServerError,
-                ) as e:
-                    should_retry = False
-                    if isinstance(e, (openai.APIConnectionError, openai.APITimeoutError)):
-                        should_retry = True
-                    elif getattr(e, 'status_code', None) in [429, 500, 502, 503]:
-                        should_retry = True
-                    
-                    if should_retry and attempt < 3:
-                        time.sleep(delays[attempt])
-                        continue
-                    
-                    raise RetryableProviderError(str(e))
-                except (openai.AuthenticationError, openai.BadRequestError) as e:
-                    raise FatalProviderError(str(e))
                 except Exception as e:
-                    raise FatalProviderError(str(e))
+                    self._handle_request_error(e, attempt)
             else:
                 raise FatalProviderError("Max retries exceeded")
 
@@ -84,6 +88,7 @@ class GroqProvider(BaseLLMProvider):
         )
 
         return response.choices[0].message.content or ""
+
     def stream_generate(
         self,
         context: str,
@@ -98,7 +103,6 @@ class GroqProvider(BaseLLMProvider):
         )
 
         with self._limiter:
-            delays = [1, 2, 4]
             chunks_yielded = 0
             for attempt in range(4):
                 try:
@@ -120,28 +124,8 @@ class GroqProvider(BaseLLMProvider):
                             yield chunk.choices[0].delta.content
                             chunks_yielded += 1
                     return # Success!
-                except (
-                    openai.APIConnectionError,
-                    openai.RateLimitError,
-                    openai.APITimeoutError,
-                    openai.InternalServerError,
-                ) as e:
-                    should_retry = False
-                    if chunks_yielded == 0:
-                        if isinstance(e, (openai.APIConnectionError, openai.APITimeoutError)):
-                            should_retry = True
-                        elif getattr(e, 'status_code', None) in [429, 500, 502, 503]:
-                            should_retry = True
-                    
-                    if should_retry and attempt < 3:
-                        time.sleep(delays[attempt])
-                        continue
-                    
-                    raise RetryableProviderError(str(e))
-                except (openai.AuthenticationError, openai.BadRequestError) as e:
-                    raise FatalProviderError(str(e))
                 except Exception as e:
-                    raise FatalProviderError(str(e))
+                    self._handle_request_error(e, attempt, chunks_yielded)
             
             raise FatalProviderError("Max retries exceeded")
 

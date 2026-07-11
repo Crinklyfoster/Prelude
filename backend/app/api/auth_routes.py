@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -25,7 +27,7 @@ router = APIRouter(
 )
 def register(
     request: RegisterRequest,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ):
     user = auth_service.register(
         db,
@@ -41,7 +43,7 @@ def register(
 )
 def login(
     request: LoginRequest,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ):
     return auth_service.login(
         db,
@@ -54,6 +56,6 @@ def login(
     response_model=UserResponse,
 )
 def me(
-    current_user: User = Depends(get_current_user),
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     return UserResponse.model_validate(current_user)

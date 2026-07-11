@@ -26,10 +26,10 @@ interface Settings {
 function Card({
   title,
   children,
-}: {
+}: Readonly<{
   title: string;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="rounded-xl border bg-white dark:bg-gray-800 p-6 shadow-sm">
       <h2 className="mb-4 font-semibold text-lg">{title}</h2>
@@ -56,8 +56,9 @@ export default function SettingsPage() {
       <Card title="🤖 AI Configuration">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="text-sm font-medium">Chat Model</label>
+            <label htmlFor="chat_model" className="text-sm font-medium">Chat Model</label>
             <select
+              id="chat_model"
               disabled
               className="mt-2 w-full rounded-lg border p-3 bg-muted"
               value={data.chat_model}
@@ -67,8 +68,9 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Embedding Model</label>
+            <label htmlFor="embedding_model" className="text-sm font-medium">Embedding Model</label>
             <select
+              id="embedding_model"
               disabled
               className="mt-2 w-full rounded-lg border p-3 bg-muted"
               value={data.embedding_model}
@@ -78,8 +80,9 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Retrieval Mode</label>
+            <label htmlFor="retrieval_mode" className="text-sm font-medium">Retrieval Mode</label>
             <select
+              id="retrieval_mode"
               disabled
               className="mt-2 w-full rounded-lg border p-3 bg-muted"
               value={data.retrieval_mode}
@@ -89,8 +92,9 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Top K</label>
+            <label htmlFor="top_k" className="text-sm font-medium">Top K</label>
             <input
+              id="top_k"
               disabled
               value={data.top_k}
               className="mt-2 w-full rounded-lg border p-3 bg-muted"
@@ -98,8 +102,9 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Chunk Size</label>
+            <label htmlFor="chunk_size" className="text-sm font-medium">Chunk Size</label>
             <input
+              id="chunk_size"
               disabled
               value={data.chunk_size}
               className="mt-2 w-full rounded-lg border p-3 bg-muted"
@@ -107,8 +112,9 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Chunk Overlap</label>
+            <label htmlFor="chunk_overlap" className="text-sm font-medium">Chunk Overlap</label>
             <input
+              id="chunk_overlap"
               disabled
               value={data.chunk_overlap}
               className="mt-2 w-full rounded-lg border p-3 bg-muted"
@@ -172,30 +178,33 @@ export default function SettingsPage() {
       <Card title="🛡 Security">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="text-sm font-medium">
+            <label htmlFor="jwt_algorithm" className="text-sm font-medium">
               JWT Algorithm
             </label>
             <input
+              id="jwt_algorithm"
               disabled
               value={data.jwt_algorithm}
               className="mt-2 w-full rounded-lg border p-3 bg-muted"
             />
           </div>
           <div>
-            <label className="text-sm font-medium">
+            <label htmlFor="jwt_expire_minutes" className="text-sm font-medium">
               Access Token
             </label>
             <input
+              id="jwt_expire_minutes"
               disabled
               value={`${data.jwt_expire_minutes} minutes`}
               className="mt-2 w-full rounded-lg border p-3 bg-muted"
             />
           </div>
           <div>
-            <label className="text-sm font-medium">
+            <label htmlFor="version" className="text-sm font-medium">
               Version
             </label>
             <input
+              id="version"
               disabled
               value={data.version}
               className="mt-2 w-full rounded-lg border p-3 bg-muted"

@@ -6,7 +6,7 @@ interface Props {
 export function SourceCard({
   preview,
   score,
-}: Props) {
+}: Readonly<Props>) {
   return (
     <div className="mt-3 rounded-lg border bg-muted/40 p-3">
       <div className="text-xs text-muted-foreground">

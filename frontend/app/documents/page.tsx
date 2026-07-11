@@ -40,7 +40,7 @@ export default function DocumentsPage() {
 
               <button
                 type="button"
-                onClick={() => void refetch()}
+                onClick={() => { refetch().catch(console.error); }}
                 disabled={isFetching}
                 className="mt-4 rounded border border-gray-300 px-4 py-2 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700"
               >

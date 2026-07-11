@@ -13,7 +13,7 @@ const accentMap: Record<NonNullable<Props["accent"]>, string> = {
   blue: "border-l-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400",
 };
 
-export default function StatCard({ title, value, accent }: Props) {
+export default function StatCard({ title, value, accent }: Readonly<Props>) {
   const accentClass = accent ? accentMap[accent] : "";
 
   return (

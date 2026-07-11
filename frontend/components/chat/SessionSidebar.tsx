@@ -192,7 +192,7 @@ export default function SessionSidebar() {
 
                 <button
                   type="button"
-                  onClick={() => void refetch()}
+                  onClick={() => { refetch().catch(console.error); }}
                   disabled={isFetching}
                   className="mt-3 rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700"
                 >

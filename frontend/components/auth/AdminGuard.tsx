@@ -8,9 +8,9 @@ import { useAuth } from "@/lib/auth-provider";
 
 export default function AdminGuard({
   children,
-}: {
+}: Readonly<{
   children: ReactNode;
-}) {
+}>) {
   const router = useRouter();
 
   const {

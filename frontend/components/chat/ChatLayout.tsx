@@ -8,7 +8,7 @@ interface Props {
 
 export function ChatLayout({
   children,
-}: Props) {
+}: Readonly<Props>) {
   return (
     <div className="flex h-screen flex-col">
       <ChatHeader />

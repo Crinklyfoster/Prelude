@@ -19,6 +19,32 @@ class GeminiProvider(BaseLLMProvider):
             api_key=settings.GEMINI_API_KEY
         )
 
+    def _handle_request_error(
+        self, e: Exception, attempt: int, chunks_yielded: int = 0
+    ) -> None:
+        """Handles API errors and retries, raising exceptions if retries are exhausted."""
+        delays = [1, 2, 4]
+        
+        if isinstance(e, genai_errors.APIError):
+            if chunks_yielded == 0 and attempt < 3 and e.code in [429, 500, 502, 503]:
+                time.sleep(delays[attempt])
+                return
+            if e.code in [429, 503, 504]:
+                raise RetryableProviderError(str(e))
+            raise FatalProviderError(str(e))
+
+        error_msg = str(e).lower()
+        is_network_error = "timeout" in error_msg or "connection" in error_msg
+        
+        if chunks_yielded == 0 and attempt < 3 and is_network_error:
+            time.sleep(delays[attempt])
+            return
+            
+        if is_network_error:
+            raise RetryableProviderError(str(e))
+            
+        raise FatalProviderError(str(e))
+
     def generate(
         self,
         context: str,
@@ -32,7 +58,6 @@ class GeminiProvider(BaseLLMProvider):
         )
 
         with self._limiter:
-            delays = [1, 2, 4]
             for attempt in range(4):
                 try:
                     response = self.client.models.generate_content(
@@ -40,21 +65,8 @@ class GeminiProvider(BaseLLMProvider):
                         contents=prompt,
                     )
                     return response.text or ""
-                except genai_errors.APIError as e:
-                    if e.code in [429, 500, 502, 503]:
-                        if attempt < 3:
-                            time.sleep(delays[attempt])
-                            continue
-                    if e.code in [429, 503, 504]:
-                        raise RetryableProviderError(str(e))
-                    raise FatalProviderError(str(e))
                 except Exception as e:
-                    if "timeout" in str(e).lower() or "connection" in str(e).lower():
-                        if attempt < 3:
-                            time.sleep(delays[attempt])
-                            continue
-                        raise RetryableProviderError(str(e))
-                    raise FatalProviderError(str(e))
+                    self._handle_request_error(e, attempt)
             
             raise FatalProviderError("Max retries exceeded")
 
@@ -71,7 +83,6 @@ class GeminiProvider(BaseLLMProvider):
         )
 
         with self._limiter:
-            delays = [1, 2, 4]
             chunks_yielded = 0
             for attempt in range(4):
                 try:
@@ -84,25 +95,8 @@ class GeminiProvider(BaseLLMProvider):
                             yield chunk.text
                             chunks_yielded += 1
                     return
-                except genai_errors.APIError as e:
-                    if chunks_yielded == 0 and e.code in [429, 500, 502, 503]:
-                        if attempt < 3:
-                            time.sleep(delays[attempt])
-                            continue
-                    if e.code in [429, 503, 504]:
-                        raise RetryableProviderError(str(e))
-                    raise FatalProviderError(str(e))
                 except Exception as e:
-                    error_msg = str(e).lower()
-                    if chunks_yielded == 0 and (
-                        "timeout" in error_msg or "connection" in error_msg
-                    ):
-                        if attempt < 3:
-                            time.sleep(delays[attempt])
-                            continue
-                    if "timeout" in str(e).lower() or "connection" in str(e).lower():
-                        raise RetryableProviderError(str(e))
-                    raise FatalProviderError(str(e))
+                    self._handle_request_error(e, attempt, chunks_yielded)
             
             raise FatalProviderError("Max retries exceeded")
 

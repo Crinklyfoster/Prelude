@@ -9,9 +9,9 @@ import { AuthProvider } from "@/lib/auth-provider";
 
 export function Providers({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   const [queryClient] = useState(
     () =>
       new QueryClient({

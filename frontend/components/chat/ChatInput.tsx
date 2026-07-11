@@ -10,7 +10,7 @@ interface Props {
 export function ChatInput({
   loading,
   onSend,
-}: Props) {
+}: Readonly<Props>) {
   const [message, setMessage] = useState("");
 
   function submit() {

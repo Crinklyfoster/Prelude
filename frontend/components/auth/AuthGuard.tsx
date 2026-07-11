@@ -8,9 +8,9 @@ import { useAuth } from "@/lib/auth-provider";
 
 export function AuthGuard({
   children,
-}: {
+}: Readonly<{
   children: ReactNode;
-}) {
+}>) {
   const router = useRouter();
 
   const { loading, isAuthenticated } = useAuth();

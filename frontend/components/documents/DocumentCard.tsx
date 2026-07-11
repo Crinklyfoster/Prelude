@@ -20,7 +20,7 @@ const statusStyles = {
 
 export default function DocumentCard({
   document,
-}: DocumentCardProps) {
+}: Readonly<DocumentCardProps>) {
   const router = useRouter();
   const createSessionMutation = useCreateSession();
   const deleteMutation = useDeleteDocument();

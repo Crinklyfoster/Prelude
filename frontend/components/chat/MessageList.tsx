@@ -11,7 +11,7 @@ interface MessageListProps {
 export default function MessageList({
   messages,
   isStreaming = false,
-}: MessageListProps) {
+}: Readonly<MessageListProps>) {
   if (messages.length === 0) {
     return (
       <div className="py-12 text-center">
@@ -30,7 +30,7 @@ export default function MessageList({
     <div className="space-y-4">
       {messages.map((message, index) => (
         <MessageBubble
-          key={index}
+          key={`${message.role}-${message.timestamp.getTime()}`}
           message={message}
           isStreaming={isStreaming && index === messages.length - 1}
         />

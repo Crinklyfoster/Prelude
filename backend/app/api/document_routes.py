@@ -1,3 +1,4 @@
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import (
@@ -22,17 +23,21 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 
 @router.get("", response_model=list[DocumentResponse])
 def get_documents(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
     return document_service.get_documents(db, current_user_id=current_user.id)
 
 
-@router.get("/{document_id}", response_model=DocumentResponse)
+@router.get(
+    "/{document_id}",
+    response_model=DocumentResponse,
+    responses={404: {"description": "Document not found"}},
+)
 def get_document(
     document_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
     document = document_service.get_document_by_id(
         db,
@@ -49,23 +54,26 @@ def get_document(
 @router.post("", response_model=DocumentResponse)
 def create_document(
     document: DocumentCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
     return document_service.create_document(
         db=db, document=document, current_user_id=current_user.id
     )
 
 
-@router.post("/upload")
+@router.post(
+    "/upload",
+    responses={400: {"description": "Only PDF files are supported"}},
+)
 def upload_document(
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    file: Annotated[UploadFile, File(...)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
 
-    if not file.filename.lower().endswith(".pdf"):
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=400, detail="Only PDF files are supported"
         )
@@ -89,11 +97,14 @@ def upload_document(
     }
 
 
-@router.delete("/{document_id}")
+@router.delete(
+    "/{document_id}",
+    responses={404: {"description": "Document not found"}},
+)
 def delete_document(
     document_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
 ):
     deleted = document_service.delete_document(
         db,

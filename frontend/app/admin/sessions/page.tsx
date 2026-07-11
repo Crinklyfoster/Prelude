@@ -75,10 +75,10 @@ export default function SessionsPage() {
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {/* Skeletons */}
             {isLoading &&
-              Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i}>
-                  {Array.from({ length: 5 }).map((__, j) => (
-                    <td key={j} className="px-6 py-4">
+              [1, 2, 3, 4, 5, 6].map((i) => (
+                <tr key={`skel-row-${i}`}>
+                  {[1, 2, 3, 4, 5].map((j) => (
+                    <td key={`skel-col-${j}`} className="px-6 py-4">
                       <div className="h-4 rounded bg-gray-100 dark:bg-gray-700 animate-pulse" />
                     </td>
                   ))}

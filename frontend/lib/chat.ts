@@ -4,8 +4,8 @@ import type {
   ChatResponse,
   ChatSession,
   CreateSessionResponse,
+  ChatMessage,
 } from "@/types/chat_request";
-import type { ChatMessage } from "@/types/chat_request";
 
 export type StreamChatEvent =
   | { type: "token"; token: string }
@@ -73,31 +73,42 @@ export async function* streamSendMessage(
       const raw = buffer.slice(0, idx);
       buffer = buffer.slice(idx + 2);
 
-      const lines = raw.split("\n");
-      const eventLine = lines.find((l) => l.startsWith("event:"));
-      const dataLine = lines.find((l) => l.startsWith("data:"));
-
-      const eventName = eventLine
-        ? eventLine.replace("event:", "").trim()
-        : "message";
-
-      const dataStr = dataLine
-        ? dataLine.replace("data:", "").trim()
-        : "{}";
-
-      const data = JSON.parse(dataStr);
-
-      if (eventName === "token") {
-        yield { type: "token", token: data.token ?? "" };
-      } else if (eventName === "meta") {
-        yield {
-          type: "meta",
-          sources: data.sources ?? [],
-          final: Boolean(data.final),
-        };
+      const event = parseSSEEvent(raw);
+      if (event) {
+        yield event;
       }
     }
   }
+}
+
+function parseSSEEvent(raw: string): StreamChatEvent | null {
+  const lines = raw.split("\n");
+  const eventLine = lines.find((l) => l.startsWith("event:"));
+  const dataLine = lines.find((l) => l.startsWith("data:"));
+
+  const eventName = eventLine
+    ? eventLine.replace("event:", "").trim()
+    : "message";
+
+  const dataStr = dataLine
+    ? dataLine.replace("data:", "").trim()
+    : "{}";
+
+  const data = JSON.parse(dataStr);
+
+  if (eventName === "token") {
+    return { type: "token", token: data.token ?? "" };
+  }
+  
+  if (eventName === "meta") {
+    return {
+      type: "meta",
+      sources: data.sources ?? [],
+      final: Boolean(data.final),
+    };
+  }
+  
+  return null;
 }
 
 export async function getSessions(): Promise<ChatSession[]> {

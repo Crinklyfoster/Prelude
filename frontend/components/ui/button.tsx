@@ -4,7 +4,7 @@ import clsx from "clsx";
 export function Button({
   className,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
+}: Readonly<ButtonHTMLAttributes<HTMLButtonElement>>) {
   return (
     <button
       className={clsx(

@@ -68,11 +68,12 @@ export function LoginForm() {
         className="space-y-5"
       >
         <div>
-          <label className="mb-1 block text-sm font-medium">
+          <label htmlFor="email" className="mb-1 block text-sm font-medium">
             Email
           </label>
 
           <input
+            id="email"
             type="email"
             {...register("email")}
             className="w-full rounded-md border border-border bg-background p-2 text-foreground outline-none focus:ring-2 focus:ring-blue-500"
@@ -86,11 +87,12 @@ export function LoginForm() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">
+          <label htmlFor="password" className="mb-1 block text-sm font-medium">
             Password
           </label>
 
           <input
+            id="password"
             type="password"
             {...register("password")}
             className="w-full rounded-md border border-border bg-background p-2 text-foreground outline-none focus:ring-2 focus:ring-blue-500"

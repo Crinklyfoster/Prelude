@@ -31,7 +31,7 @@ export interface ChatWorkspaceProps {
 
 export default function ChatWorkspace({
   sessionId,
-}: ChatWorkspaceProps) {
+}: Readonly<ChatWorkspaceProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuestion =
@@ -132,8 +132,8 @@ export default function ChatWorkspace({
         if (event.type === "token") {
           setMessages((prev) => {
             const updated = [...prev];
-            const last = updated[updated.length - 1];
-            if (last && last.role === "assistant") {
+            const last = updated.at(-1);
+            if (last?.role === "assistant") {
               updated[updated.length - 1] = {
                 ...last,
                 content: last.content + event.token,
@@ -146,8 +146,8 @@ export default function ChatWorkspace({
         } else if (event.type === "meta") {
           setMessages((prev) => {
             const updated = [...prev];
-            const last = updated[updated.length - 1];
-            if (last && last.role === "assistant") {
+            const last = updated.at(-1);
+            if (last?.role === "assistant") {
               updated[updated.length - 1] = {
                 ...last,
                 sources: event.sources,
@@ -165,11 +165,8 @@ export default function ChatWorkspace({
       // Remove the empty placeholder on error (but keep partial content on abort).
       setMessages((prev) => {
         const updated = [...prev];
-        if (
-          updated.length > 0 &&
-          updated[updated.length - 1].role === "assistant" &&
-          updated[updated.length - 1].content === ""
-        ) {
+        const lastMsg = updated.at(-1);
+        if (lastMsg?.role === "assistant" && lastMsg?.content === "") {
           updated.pop();
         }
         return updated;
@@ -186,7 +183,7 @@ export default function ChatWorkspace({
 
     hasAutoSent.current = true;
 
-    void handleSend(initialQuestion);
+    handleSend(initialQuestion).catch(console.error);
 
     router.replace(`/chat/${sessionId}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -200,7 +197,7 @@ export default function ChatWorkspace({
       !event.nativeEvent.isComposing
     ) {
       event.preventDefault();
-      void handleSend();
+      handleSend().catch(console.error);
     }
   };
 
@@ -227,9 +224,9 @@ export default function ChatWorkspace({
 
             <button
               type="button"
-              onClick={() =>
-                void refetchMessages()
-              }
+              onClick={() => {
+                refetchMessages().catch(console.error);
+              }}
               disabled={isFetchingMessages}
               className="mt-4 rounded border border-gray-300 px-4 py-2 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700"
             >
@@ -265,7 +262,7 @@ export default function ChatWorkspace({
 
         {isStreaming &&
           renderedMessages.length > 0 &&
-          renderedMessages[renderedMessages.length - 1]?.content === "" && (
+          renderedMessages.at(-1)?.content === "" && (
             <div className="mt-4">
               <TypingIndicator />
             </div>
@@ -346,7 +343,7 @@ export default function ChatWorkspace({
             ) : (
               <button
                 type="button"
-                onClick={() => void handleSend()}
+                onClick={() => { handleSend().catch(console.error); }}
                 disabled={!input.trim()}
                 className="rounded p-2 hover:bg-muted disabled:opacity-50"
                 aria-label="Send message"

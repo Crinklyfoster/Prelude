@@ -12,7 +12,7 @@ import {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function RoleBadge({ role }: { role: string }) {
+function RoleBadge({ role }: Readonly<{ role: string }>) {
   const isAdmin = role === "admin";
   return (
     <span
@@ -32,12 +32,12 @@ function ActionButton({
   onClick,
   variant,
   disabled,
-}: {
+}: Readonly<{
   label: string;
   onClick: () => void;
   variant: "promote" | "demote" | "delete";
   disabled?: boolean;
-}) {
+}>) {
   const styles = {
     promote:
       "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/60",
@@ -145,10 +145,10 @@ export default function UsersPage() {
 
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {isLoading &&
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}>
-                  {Array.from({ length: 5 }).map((__, j) => (
-                    <td key={j} className="px-6 py-4">
+              [1, 2, 3, 4, 5].map((i) => (
+                <tr key={`skel-row-${i}`}>
+                  {[1, 2, 3, 4, 5].map((j) => (
+                    <td key={`skel-col-${j}`} className="px-6 py-4">
                       <div className="h-4 rounded bg-gray-100 dark:bg-gray-700 animate-pulse" />
                     </td>
                   ))}

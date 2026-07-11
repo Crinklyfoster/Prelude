@@ -8,7 +8,7 @@ interface Props {
 
 export function ChatMessages({
   messages,
-}: Props) {
+}: Readonly<Props>) {
   return (
     <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
       {messages.map((message) => (

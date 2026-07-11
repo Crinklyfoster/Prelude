@@ -15,7 +15,7 @@ interface MessageBubbleProps {
 export default function MessageBubble({
   message,
   isStreaming = false,
-}: MessageBubbleProps) {
+}: Readonly<MessageBubbleProps>) {
   const [showSources, setShowSources] = useState(false);
   const isUser = message.role === "user";
   const isEmpty = message.content === "" && !isUser;
@@ -59,9 +59,9 @@ export default function MessageBubble({
 
             {showSources && (
               <div className="mt-2 space-y-2">
-                {message.sources.map((source, index) => (
+                {message.sources.map((source) => (
                   <SourceCard
-                    key={index}
+                    key={`${source.document_id}-${source.chunk_id}`}
                     preview={source.preview}
                     score={source.score}
                   />

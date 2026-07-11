@@ -32,10 +32,10 @@ function healthDot(value: string) {
 function HealthCard({
   label,
   value,
-}: {
+}: Readonly<{
   label: string;
   value: string;
-}) {
+}>) {
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm flex items-center gap-4">
       <span
@@ -53,7 +53,7 @@ function HealthCard({
   );
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function InfoCard({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
@@ -105,9 +105,9 @@ export default function MonitoringPage() {
 
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div
-                key={i}
+                key={`skel-card-${i}`}
                 className="h-20 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 animate-pulse"
               />
             ))}

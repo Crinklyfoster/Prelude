@@ -22,7 +22,7 @@ const STATUS_STYLES: Record<string, string> = {
     "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
 };
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status }: Readonly<{ status: string }>) {
   const cls = STATUS_STYLES[status] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
@@ -36,12 +36,12 @@ function ActionButton({
   onClick,
   variant,
   disabled,
-}: {
+}: Readonly<{
   label: string;
   onClick: () => void;
   variant: "danger" | "secondary";
   disabled?: boolean;
-}) {
+}>) {
   const styles = {
     danger:
       "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/60",
@@ -138,10 +138,10 @@ export default function DocumentsPage() {
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {/* Skeleton rows */}
             {isLoading &&
-              Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i}>
-                  {Array.from({ length: 5 }).map((__, j) => (
-                    <td key={j} className="px-6 py-4">
+              [1, 2, 3, 4, 5, 6].map((i) => (
+                <tr key={`skel-row-${i}`}>
+                  {[1, 2, 3, 4, 5].map((j) => (
+                    <td key={`skel-col-${j}`} className="px-6 py-4">
                       <div className="h-4 rounded bg-gray-100 dark:bg-gray-700 animate-pulse" />
                     </td>
                   ))}

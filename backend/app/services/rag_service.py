@@ -39,32 +39,19 @@ class RAGService:
             or 0.0
         )
 
-    def answer_question(
-        self,
-        question: str,
-        conversation_history: str = "",
-        current_user_id=None,
-        document_ids: list[str] | None = None,
-        top_k: int = settings.TOP_K,
-    ):
-        request_start = time.perf_counter()
-        CHAT_REQUESTS.inc()
-
-        timer = BenchmarkTimer()
-
-        timer.start("query_rewrite")
+    def _get_retrieval_query(self, question: str, conversation_history: str) -> str:
         if settings.ENABLE_QUERY_REWRITE:
-            retrieval_query = self.rewriter.rewrite(
-                question,
-                conversation_history,
-            )
-        else:
-            retrieval_query = question
-        timer.stop("query_rewrite")
+            return self.rewriter.rewrite(question, conversation_history)
+        return question
 
-        timer.start("retrieval")
-        retrieval_start = time.perf_counter()
-
+    def _perform_retrieval(
+        self,
+        retrieval_query: str,
+        current_user_id,
+        document_ids: list[str] | None,
+        top_k: int,
+        timer=None,
+    ) -> tuple[list, float, bool]:
         cache_key = (
             str(current_user_id),
             tuple(sorted(document_ids or [])),
@@ -104,6 +91,57 @@ class RAGService:
             retrieved_chunks = retrieval_result
             confidence = 0.0
 
+        return retrieved_chunks, confidence, cache_hit
+
+    def _format_sources(self, retrieved_chunks: list) -> list[dict]:
+        return [
+            {
+                "chunk_id": chunk["metadata"]["chunk_id"],
+                "document_id": chunk["metadata"]["document_id"],
+                "score": self._get_score(chunk),
+                "preview": chunk["text"][:200],
+            }
+            for chunk in retrieved_chunks
+        ]
+
+    def _format_benchmark(
+        self, timer, cache_hit: bool, confidence: float, provider_meta: dict | None = None
+    ) -> dict[str, Any]:
+        stage_times = {r.stage: r.duration_ms for r in timer.results} if timer else {}
+        benchmark_data: dict[str, Any] = {
+            "query_rewrite_ms": int(stage_times.get("query_rewrite", 0.0)),
+            "dense_ms": int(stage_times.get("dense", 0.0)),
+            "bm25_ms": int(stage_times.get("bm25", 0.0)),
+            "rrf_ms": int(stage_times.get("rrf", 0.0)),
+            "cache": "HIT" if cache_hit else "MISS",
+            "confidence": round(confidence, 3)
+        }
+        if provider_meta:
+            benchmark_data.update(provider_meta)
+        return benchmark_data
+
+    def answer_question(
+        self,
+        question: str,
+        conversation_history: str = "",
+        current_user_id=None,
+        document_ids: list[str] | None = None,
+        top_k: int = settings.TOP_K,
+    ):
+        request_start = time.perf_counter()
+        CHAT_REQUESTS.inc()
+
+        timer = BenchmarkTimer()
+
+        timer.start("query_rewrite")
+        retrieval_query = self._get_retrieval_query(question, conversation_history)
+        timer.stop("query_rewrite")
+
+        timer.start("retrieval")
+        retrieval_start = time.perf_counter()
+        retrieved_chunks, confidence, cache_hit = self._perform_retrieval(
+            retrieval_query, current_user_id, document_ids, top_k, timer
+        )
         retrieval_time = time.perf_counter() - retrieval_start
         timer.stop("retrieval")
 
@@ -131,21 +169,11 @@ class RAGService:
         if not retrieved_chunks:
             response: dict[str, Any] = {
                 "question": question,
-                "answer": (
-                    "I could not find that information in the document."
-                ),
+                "answer": "I could not find that information in the document.",
                 "sources": [],
             }
             if settings.ENABLE_BENCHMARKS:
-                stage_times = {r.stage: r.duration_ms for r in timer.results}
-                response["benchmark"] = {
-                    "query_rewrite_ms": int(stage_times.get("query_rewrite", 0.0)),
-                    "dense_ms": int(stage_times.get("dense", 0.0)),
-                    "bm25_ms": int(stage_times.get("bm25", 0.0)),
-                    "rrf_ms": int(stage_times.get("rrf", 0.0)),
-                    "cache": "HIT" if cache_hit else "MISS",
-                    "confidence": round(confidence, 3)
-                }
+                response["benchmark"] = self._format_benchmark(timer, cache_hit, confidence)
                 logger.info("Benchmark %s", response["benchmark"])
             return response
 
@@ -180,30 +208,13 @@ class RAGService:
         response: dict[str, Any] = {
             "question": question,
             "answer": answer,
-            "sources": [
-                {
-                    "chunk_id": chunk["metadata"]["chunk_id"],
-                    "document_id": chunk["metadata"]["document_id"],
-                    "score": self._get_score(chunk),
-                    "preview": chunk["text"][:200],
-                }
-                for chunk in retrieved_chunks
-            ],
+            "sources": self._format_sources(retrieved_chunks),
         }
 
         if settings.ENABLE_BENCHMARKS:
-            stage_times = {r.stage: r.duration_ms for r in timer.results}
-            benchmark_data: dict[str, Any] = {
-                "query_rewrite_ms": int(stage_times.get("query_rewrite", 0.0)),
-                "dense_ms": int(stage_times.get("dense", 0.0)),
-                "bm25_ms": int(stage_times.get("bm25", 0.0)),
-                "rrf_ms": int(stage_times.get("rrf", 0.0)),
-                "cache": "HIT" if cache_hit else "MISS",
-                "confidence": round(confidence, 3)
-            }
-            if provider_meta:
-                benchmark_data.update(provider_meta)
-            response["benchmark"] = benchmark_data
+            response["benchmark"] = self._format_benchmark(
+                timer, cache_hit, confidence, provider_meta
+            )
             logger.info("Benchmark %s", response["benchmark"])
 
         return response
@@ -219,50 +230,14 @@ class RAGService:
         request_start = time.perf_counter()
         CHAT_REQUESTS.inc()
 
-        if settings.ENABLE_QUERY_REWRITE:
-            retrieval_query = self.rewriter.rewrite(
-                question,
-                conversation_history,
-            )
-        else:
-            retrieval_query = question
+        retrieval_query = self._get_retrieval_query(question, conversation_history)
 
         retrieval_start = time.perf_counter()
-
-        cache_key = (
-            str(current_user_id),
-            tuple(sorted(document_ids or [])),
-            retrieval_query,
+        retrieved_chunks, _, _ = self._perform_retrieval(
+            retrieval_query, current_user_id, document_ids, top_k
         )
-
-        from app.rag.retrieval_cache import cache
-
-        if settings.ENABLE_RETRIEVAL_CACHE:
-            cached = cache.get(cache_key)
-            if cached is not None:
-                retrieval_result = cached
-            else:
-                retrieval_result = self.retriever.retrieve(
-                    retrieval_query,
-                    current_user_id=current_user_id,
-                    document_ids=document_ids,
-                    top_k=top_k,
-                )
-                cache[cache_key] = retrieval_result
-        else:
-            retrieval_result = self.retriever.retrieve(
-                retrieval_query,
-                current_user_id=current_user_id,
-                document_ids=document_ids,
-                top_k=top_k,
-            )
-
-        if isinstance(retrieval_result, dict):
-            retrieved_chunks = retrieval_result["chunks"]
-        else:
-            retrieved_chunks = retrieval_result
-
         retrieval_time = time.perf_counter() - retrieval_start
+        
         log_retrieval_event(
             action="retrieve_stream",
             query=retrieval_query,
@@ -272,15 +247,7 @@ class RAGService:
             mode=settings.RETRIEVAL_MODE.value,
         )
 
-        sources = [
-            {
-                "chunk_id": chunk["metadata"]["chunk_id"],
-                "document_id": chunk["metadata"]["document_id"],
-                "score": self._get_score(chunk),
-                "preview": chunk["text"][:200],
-            }
-            for chunk in retrieved_chunks
-        ]
+        sources = self._format_sources(retrieved_chunks)
 
         if not retrieved_chunks:
             yield {"type": "meta", "sources": [], "final": True}

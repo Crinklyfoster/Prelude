@@ -7,7 +7,7 @@ interface DocumentListProps {
 
 export default function DocumentList({
   documents,
-}: DocumentListProps) {
+}: Readonly<DocumentListProps>) {
   if (documents.length === 0) {
     return (
       <div className="py-12 text-center">

@@ -104,6 +104,26 @@ class ProviderManager:
         return result
 
     @classmethod
+    def _get_provider_instance_for_health(cls, name: str, provider_cls, model_to_use: str):
+        key = (name, model_to_use)
+        if key in cls._cache:
+            return cls._cache[key]
+        try:
+            return provider_cls(model=model_to_use)
+        except Exception:
+            return None
+
+    @classmethod
+    def _check_provider_health(cls, name: str, provider_cls, model_to_use: str) -> str:
+        provider_instance = cls._get_provider_instance_for_health(name, provider_cls, model_to_use)
+        if not provider_instance:
+            return "unhealthy"
+        try:
+            return provider_instance.health()
+        except Exception:
+            return "unhealthy"
+
+    @classmethod
     def health(cls) -> list[dict]:
         result = []
         default_models = {
@@ -115,31 +135,14 @@ class ProviderManager:
         active_provider = SettingsService.get_provider().lower()
         
         for name, provider_cls in PROVIDERS.items():
-            if name == active_provider:
-                model_to_use = active_model
-            else:
-                model_to_use = default_models.get(name, "default")
-            
-            key = (name, model_to_use)
-            if key in cls._cache:
-                provider_instance = cls._cache[key]
-            else:
-                try:
-                    provider_instance = provider_cls(model=model_to_use)
-                except Exception:
-                    provider_instance = None
-            
-            if provider_instance:
-                try:
-                    status = provider_instance.health()
-                except Exception:
-                    status = "unhealthy"
-            else:
-                status = "unhealthy"
-                
+            model_to_use = (
+                active_model
+                if name == active_provider
+                else default_models.get(name, "default")
+            )
             result.append({
                 "provider": name,
-                "status": status,
+                "status": cls._check_provider_health(name, provider_cls, model_to_use),
             })
         return result
 
