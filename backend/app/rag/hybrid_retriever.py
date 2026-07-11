@@ -22,7 +22,6 @@ class HybridRetriever:
         query: str,
         current_user_id: str | None,
         document_ids=None,
-        top_k: int = 5,
         timer=None,
     ) -> dict:
         candidate_k = max(

@@ -19,7 +19,6 @@ class Retriever:
         current_user_id,
         document_ids=None,
         top_k: int = settings.TOP_K,
-        timer=None,
     ):
         start = time.time()
 

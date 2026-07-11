@@ -68,7 +68,7 @@ def upload_document(db, file, *, current_user_id):
 
     start = time.time()
 
-    file_path, stored_filename = save_uploaded_file(file)
+    file_path, _ = save_uploaded_file(file)
 
     document = Document(
         filename=file.filename,

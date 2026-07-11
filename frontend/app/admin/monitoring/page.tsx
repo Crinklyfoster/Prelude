@@ -103,7 +103,7 @@ export default function MonitoringPage() {
           Service Health
         </h2>
 
-        {isLoading ? (
+        {isLoading && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
               <div
@@ -112,14 +112,15 @@ export default function MonitoringPage() {
               />
             ))}
           </div>
-        ) : sys ? (
+        )}
+        {!isLoading && sys && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <HealthCard label="Backend" value={sys.backend} />
             <HealthCard label="Database" value={sys.database} />
             <HealthCard label="Chroma" value={sys.chroma} />
             <HealthCard label="Ollama / LLM" value={sys.ollama} />
           </div>
-        ) : null}
+        )}
       </section>
 
       {/* ── Config Info ────────────────────────────────────────── */}

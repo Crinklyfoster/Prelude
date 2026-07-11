@@ -75,11 +75,14 @@ class LexicalIndex:
 
             self.chunk_metadata.pop(chunk_id, None)
 
-            for token in list(self.inverted_index.keys()):
-                self.inverted_index[token].pop(chunk_id, None)
+            tokens_to_remove = []
+            for token, postings in self.inverted_index.items():
+                postings.pop(chunk_id, None)
+                if not postings:
+                    tokens_to_remove.append(token)
 
-                if not self.inverted_index[token]:
-                    del self.inverted_index[token]
+            for token in tokens_to_remove:
+                del self.inverted_index[token]
 
             self.total_chunks -= 1
 
