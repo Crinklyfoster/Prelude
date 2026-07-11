@@ -47,15 +47,8 @@ class GeminiProvider(BaseLLMProvider):
 
     def generate(
         self,
-        context: str,
-        question: str,
-        conversation_history: str = "",
+        prompt: str,
     ) -> str:
-        prompt = self._build_prompt(
-            context,
-            question,
-            conversation_history,
-        )
 
         with self._limiter:
             for attempt in range(4):
@@ -72,15 +65,8 @@ class GeminiProvider(BaseLLMProvider):
 
     def stream_generate(
         self,
-        context: str,
-        question: str,
-        conversation_history: str = "",
+        prompt: str,
     ) -> Any:
-        prompt = self._build_prompt(
-            context,
-            question,
-            conversation_history,
-        )
 
         with self._limiter:
             chunks_yielded = 0

@@ -71,6 +71,14 @@ export default function MessageBubble({
           </div>
         ) : null}
 
+        {/* Provider Badge */}
+        {!isEmpty && message.provider && (
+          <div className={`mt-3 inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${isUser ? "bg-blue-600 text-blue-100" : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"}`}>
+            {message.provider}
+            {message.latencyMs !== undefined ? ` ${(message.latencyMs / 1000).toFixed(1)} s` : ""}
+          </div>
+        )}
+
         {/* Hide the timestamp on the empty placeholder bubble */}
         {!isEmpty && (
           <p

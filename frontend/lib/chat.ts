@@ -9,7 +9,8 @@ import type {
 
 export type StreamChatEvent =
   | { type: "token"; token: string }
-  | { type: "meta"; sources: ChatResponse["sources"]; final: boolean };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | { type: "meta"; sources: ChatResponse["sources"]; final: boolean; provider_meta?: any };
 
 export async function createSession(): Promise<CreateSessionResponse> {
   const response =
@@ -105,6 +106,7 @@ function parseSSEEvent(raw: string): StreamChatEvent | null {
       type: "meta",
       sources: data.sources ?? [],
       final: Boolean(data.final),
+      provider_meta: data.provider_meta,
     };
   }
   

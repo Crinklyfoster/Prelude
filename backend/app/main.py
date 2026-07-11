@@ -20,7 +20,11 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Enterprise RAG backend starting")
-    ModelWarmupService().warmup()
+    
+    from app.services.settings_service import SettingsService
+    if SettingsService.get_provider() == "ollama":
+        ModelWarmupService().warmup()
+        
     yield
     logger.info("Enterprise RAG backend shutting down")
 

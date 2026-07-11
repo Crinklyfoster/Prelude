@@ -42,6 +42,15 @@ export default function ChatWorkspace({
   const [messages, setMessages] =
     useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [provider, setProvider] = useState<string>("auto");
+
+  // Load preferred provider from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("preferred_provider");
+    if (saved) {
+      setProvider(saved);
+    }
+  }, []);
 
   const {
     data: history,
@@ -113,6 +122,7 @@ export default function ChatWorkspace({
 
     setInput("");
     setIsStreaming(true);
+    const startTime = Date.now();
 
     // Fresh AbortController for this request.
     const controller = new AbortController();
@@ -126,7 +136,11 @@ export default function ChatWorkspace({
 
     try {
       for await (const event of streamSendMessage(
-        { session_id: sessionId, question },
+        { 
+          session_id: sessionId, 
+          question, 
+          ...(provider !== "auto" && { provider }) 
+        },
         controller.signal,
       )) {
         if (event.type === "token") {
@@ -151,6 +165,8 @@ export default function ChatWorkspace({
               updated[updated.length - 1] = {
                 ...last,
                 sources: event.sources,
+                provider: event.provider_meta?.actual_provider,
+                latencyMs: Date.now() - startTime,
               };
             }
             return updated;
@@ -319,6 +335,20 @@ export default function ChatWorkspace({
             >
               <Paperclip className="size-5" />
             </button>
+
+            <select
+              value={provider}
+              onChange={(e) => {
+                const val = e.target.value;
+                setProvider(val);
+                localStorage.setItem("preferred_provider", val);
+              }}
+              className="rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm outline-none dark:border-gray-700 dark:bg-gray-800"
+            >
+              <option value="auto">Auto</option>
+              <option value="groq">Groq</option>
+              <option value="gemini">Gemini</option>
+            </select>
 
             <input
               autoFocus

@@ -38,7 +38,9 @@ class ProviderManager:
             return provider_instance
 
     @classmethod
-    def get_provider_priority(cls) -> list[str]:
+    def get_provider_priority(cls, override: str | None = None) -> list[str]:
+        if override:
+            return [override.lower()]
         active = SettingsService.get_provider().lower()
         priority = [active]
         for p in settings.LLM_PROVIDER_PRIORITY:
@@ -162,3 +164,113 @@ class ProviderManager:
                 "average_latency_ms": avg_latency
             })
         return result
+
+    @classmethod
+    def _build_meta(cls, provider_name, requested_provider, last_error, is_stream=False):
+        fallback = provider_name != requested_provider
+        if fallback:
+            cls.log_failover(
+                requested_provider, provider_name, last_error or "Unknown error"
+            )
+        
+        meta = {
+            "requested_provider": requested_provider,
+            "actual_provider": provider_name,
+            "fallback": fallback,
+            "reason": last_error if fallback else None
+        }
+        if is_stream:
+            meta["type"] = "provider_meta"
+        return meta
+
+    @classmethod
+    def _generate_with_provider(
+        cls, provider_name, requested_provider, last_error, start_time, prompt
+    ):
+        from app.llm.errors import RetryableProviderError
+        import time
+        try:
+            model_name = cls.get_model_for_provider(provider_name)
+            provider_instance = cls.get(provider_name, model_name)
+            
+            result = provider_instance.generate(prompt=prompt)
+            cls.track_metric(provider_name, (time.perf_counter() - start_time) * 1000, True)
+            
+            meta = cls._build_meta(provider_name, requested_provider, last_error)
+            return result, meta
+            
+        except RetryableProviderError as e:
+            cls.track_metric(provider_name, (time.perf_counter() - start_time) * 1000, False)
+            raise e
+        except Exception:
+            cls.track_metric(provider_name, (time.perf_counter() - start_time) * 1000, False)
+            raise
+
+    @classmethod
+    def generate(cls, prompt: str, provider: str | None = None):
+        from app.llm.errors import RetryableProviderError
+        import time
+        priority = cls.get_provider_priority(override=provider)
+        last_error = None
+        requested_provider = priority[0]
+        
+        for provider_name in priority:
+            start_time = time.perf_counter()
+            try:
+                return cls._generate_with_provider(
+                    provider_name, requested_provider, last_error, start_time, prompt
+                )
+            except RetryableProviderError as e:
+                last_error = str(e)
+                
+        raise RuntimeError(f"No provider available. Last error: {last_error}")
+
+    @classmethod
+    def _stream_with_provider(
+        cls, provider_name, requested_provider, last_error, start_time, prompt
+    ):
+        from app.llm.errors import RetryableProviderError
+        import time
+        token_yielded = False
+        try:
+            model_name = cls.get_model_for_provider(provider_name)
+            provider_instance = cls.get(provider_name, model_name)
+            
+            generator = provider_instance.stream_generate(prompt=prompt)
+            
+            yield cls._build_meta(provider_name, requested_provider, last_error, is_stream=True)
+            
+            for chunk in generator:
+                token_yielded = True
+                yield chunk
+                
+            cls.track_metric(provider_name, (time.perf_counter() - start_time) * 1000, True)
+            
+        except RetryableProviderError as e:
+            cls.track_metric(provider_name, (time.perf_counter() - start_time) * 1000, False)
+            if token_yielded:
+                raise
+            raise e
+        except Exception:
+            cls.track_metric(provider_name, (time.perf_counter() - start_time) * 1000, False)
+            raise
+
+    @classmethod
+    def stream_generate(cls, prompt: str, provider: str | None = None):
+        from app.llm.errors import RetryableProviderError
+        import time
+        priority = cls.get_provider_priority(override=provider)
+        last_error = None
+        requested_provider = priority[0]
+        
+        for provider_name in priority:
+            start_time = time.perf_counter()
+            try:
+                yield from cls._stream_with_provider(
+                    provider_name, requested_provider, last_error, start_time, prompt
+                )
+                return
+            except RetryableProviderError as e:
+                last_error = str(e)
+                
+        raise RuntimeError(f"No provider available. Last error: {last_error}")

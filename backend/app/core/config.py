@@ -67,11 +67,10 @@ class Settings(BaseSettings):
     # ----------------------------
     # Generation
     # ----------------------------
-    LLM_PROVIDER: str = "ollama"
+    LLM_PROVIDER: str = "groq"
     LLM_PROVIDER_PRIORITY: list[str] = [
         "groq",
         "gemini",
-        "ollama",
     ]
     OLLAMA_MODEL: str = "qwen3:8b"
     GEMINI_MODEL: str = "gemini-2.5-flash"
