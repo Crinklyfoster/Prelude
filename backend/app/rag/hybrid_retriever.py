@@ -17,12 +17,16 @@ class HybridRetriever:
 
         self.rrf_k = settings.RRF_K
 
+    def user_has_documents(self, current_user_id) -> bool:
+        return self.dense.user_has_documents(current_user_id)
+
     def retrieve(
         self,
         query: str,
         current_user_id: str | None,
         document_ids=None,
         timer=None,
+        **kwargs,
     ) -> dict:
         candidate_k = max(
             settings.FINAL_TOP_K * 4,

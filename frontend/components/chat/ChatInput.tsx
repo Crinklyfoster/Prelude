@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 
+type LLMProvider = "groq" | "gemini";
+type ProviderOption = "" | LLMProvider;
+
 interface Props {
   loading: boolean;
-  onSend: (message: string) => void;
+  onSend: (message: string, provider?: LLMProvider) => void;
 }
 
 export function ChatInput({
@@ -12,11 +15,19 @@ export function ChatInput({
   onSend,
 }: Readonly<Props>) {
   const [message, setMessage] = useState("");
+  const [provider, setProvider] = useState<ProviderOption>(
+    () => {
+      if (typeof window !== "undefined") {
+        return (localStorage.getItem("preferred_provider") as ProviderOption) ?? "";
+      }
+      return "";
+    }
+  );
 
   function submit() {
     if (!message.trim()) return;
 
-    onSend(message);
+    onSend(message, provider || undefined);
 
     setMessage("");
   }
@@ -29,7 +40,7 @@ export function ChatInput({
           onChange={(e) =>
             setMessage(e.target.value)
           }
-          placeholder="Ask anything about your documents..."
+          placeholder="Ask me anything..."
           className="flex-1 rounded-lg border p-3"
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -37,6 +48,22 @@ export function ChatInput({
             }
           }}
         />
+
+        <select
+          value={provider}
+          onChange={(e) => {
+            const value = e.target.value as ProviderOption;
+            setProvider(value);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("preferred_provider", value);
+            }
+          }}
+          className="rounded-lg border px-3 py-2"
+        >
+          <option value="">Auto</option>
+          <option value="groq">Groq · Llama 3.3 70B</option>
+          <option value="gemini">Gemini · Gemini Flash</option>
+        </select>
 
         <button
           disabled={loading}

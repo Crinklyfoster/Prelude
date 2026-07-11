@@ -16,6 +16,12 @@ export default function ChatHomePage() {
   const router = useRouter();
 
   const [question, setQuestion] = useState("");
+  const [provider, setProvider] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("preferred_provider") ?? "auto";
+    }
+    return "auto";
+  });
 
   const createSessionMutation = useCreateSession();
 
@@ -81,7 +87,12 @@ export default function ChatHomePage() {
                       }
                     } catch (error) {
                       console.error("UPLOAD ERROR:", error);
-                      toast.error("Failed to upload document(s)");
+                      const err = error as { response?: { status?: number } };
+                      if (err?.response?.status === 409) {
+                        toast.error("This PDF already exists in your library.");
+                      } else {
+                        toast.error("Failed to upload document(s)");
+                      }
                     }
                   }}
                 />
@@ -93,6 +104,20 @@ export default function ChatHomePage() {
                 >
                   <Paperclip className="size-5" />
                 </button>
+
+                <select
+                  value={provider}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setProvider(val);
+                    localStorage.setItem("preferred_provider", val);
+                  }}
+                  className="rounded border border-gray-200 bg-gray-50 px-2 py-1 text-sm outline-none dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="groq">Groq</option>
+                  <option value="gemini">Gemini</option>
+                </select>
 
                 <input
                   value={question}

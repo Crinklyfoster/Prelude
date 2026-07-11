@@ -73,7 +73,7 @@ class Settings(BaseSettings):
         "gemini",
     ]
     OLLAMA_MODEL: str = "qwen3:8b"
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash"
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
     GEMINI_API_KEY: str = ""
     GROQ_API_KEY: str = ""

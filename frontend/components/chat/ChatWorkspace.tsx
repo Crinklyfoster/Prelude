@@ -42,15 +42,12 @@ export default function ChatWorkspace({
   const [messages, setMessages] =
     useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [provider, setProvider] = useState<string>("auto");
-
-  // Load preferred provider from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("preferred_provider");
-    if (saved) {
-      setProvider(saved);
+  const [provider, setProvider] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("preferred_provider") ?? "auto";
     }
-  }, []);
+    return "auto";
+  });
 
   const {
     data: history,
@@ -139,7 +136,7 @@ export default function ChatWorkspace({
         { 
           session_id: sessionId, 
           question, 
-          ...(provider !== "auto" && { provider }) 
+          ...(provider !== "auto" && { provider: provider as "groq" | "gemini" })
         },
         controller.signal,
       )) {
@@ -316,9 +313,12 @@ export default function ChatWorkspace({
                 }
               } catch (error) {
                 console.error("UPLOAD ERROR:", error);
-                toast.error(
-                  "Failed to upload document(s)"
-                );
+                const err = error as { response?: { status?: number } };
+                if (err?.response?.status === 409) {
+                  toast.error("This PDF already exists in your library.");
+                } else {
+                  toast.error("Failed to upload document(s)");
+                }
               }
             }}
           />

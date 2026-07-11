@@ -1,3 +1,4 @@
+import hashlib
 import time
 from pathlib import Path
 from uuid import uuid4
@@ -63,8 +64,38 @@ def save_uploaded_file(file):
 
     return str(file_path), unique_filename
 
+def calculate_sha256(file) -> str:
+    sha256 = hashlib.sha256()
+
+    while chunk := file.file.read(1024 * 1024):
+        sha256.update(chunk)
+
+    file.file.seek(0)
+
+    return sha256.hexdigest()
+
+def get_duplicate_document(
+    db,
+    *,
+    current_user_id,
+    sha256,
+):
+    return (
+        db.query(Document)
+        .filter(
+            Document.user_id == current_user_id,
+            Document.sha256 == sha256,
+        )
+        .first()
+    )
+
 
 def upload_document(db, file, *, current_user_id):
+    file_hash = calculate_sha256(file)
+    existing = get_duplicate_document(db, current_user_id=current_user_id, sha256=file_hash)
+    
+    if existing:
+        return {"error": "duplicate"}
 
     start = time.time()
 
@@ -75,6 +106,7 @@ def upload_document(db, file, *, current_user_id):
         file_path=file_path,
         status="processing",
         user_id=current_user_id,
+        sha256=file_hash,
     )
 
     db.add(document)
