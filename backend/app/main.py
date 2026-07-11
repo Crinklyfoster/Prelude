@@ -20,17 +20,12 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Enterprise RAG backend starting")
+    ModelWarmupService().warmup()
     yield
     logger.info("Enterprise RAG backend shutting down")
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
-
-
-@app.on_event("startup")
-def warm_models():
-
-    ModelWarmupService().warmup()
 
 
 app.add_middleware(

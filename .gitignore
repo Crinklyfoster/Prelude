@@ -1,59 +1,123 @@
+# ==========================================================
+# Enterprise RAG Assistant
+# Git Ignore
+# ==========================================================
+
+# ==========================================================
 # Python
+# ==========================================================
 __pycache__/
-*.pyc
+**/__pycache__/
 *.py[cod]
+*.pyc
 *.pyo
 *.pyd
 
 # Virtual Environments
 venv/
 .venv/
+backend/venv/
 
-# Environment Files
+# Python Tooling
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+
+# ==========================================================
+# Environment Variables
+# ==========================================================
 .env
 .env.*
 backend/.env
-!.env.example
-
 frontend/.env.local
 frontend/.env.*
+
+!.env.example
+!backend/.env.example
 !frontend/.env.example
 
-# Uploads & Media
+# ==========================================================
+# Runtime Data
+# ==========================================================
+
+# Uploaded documents
 uploads/
-backend/uploads/*
+backend/uploads/
 
-# Runtime lexical index
-backend/storage/lexical/*.json
+# Generated lexical index
+backend/storage/lexical/
 
+# Logs
+*.log
+backend/backend.log
+
+# ==========================================================
 # Databases & Vector Stores
+# ==========================================================
 *.db
+*.sqlite
+*.sqlite3
+
 chroma_db/
+backend/chroma_db/
+
 faiss_index/
 data/vectorstore/
 
-# Frontend (Node / Next.js)
+# ==========================================================
+# Frontend (Next.js / Node)
+# ==========================================================
+node_modules/
 frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/build/
+
 .next/
+frontend/.next/
+
 out/
+frontend/out/
+
+build/
+frontend/build/
+
 .turbo/
 
-# Logs & Cache
-*.log
-.cache/
+# ==========================================================
+# Benchmarks
+# ==========================================================
+benchmarks/results/
 benchmarks/*.csv
 
+# ==========================================================
 # Testing & Coverage
+# ==========================================================
 coverage/
+htmlcov/
+.coverage
+.coverage.*
 *.tsbuildinfo
 
-# IDEs & Editors
+# ==========================================================
+# Docker
+# ==========================================================
+docker-compose.override.yml
+
+# ==========================================================
+# IDEs
+# ==========================================================
 .vscode/
 .idea/
 
-# OS Specific
+# ==========================================================
+# Operating System
+# ==========================================================
 .DS_Store
 Thumbs.db
+._*
+
+# ==========================================================
+# Temporary / Backup Files
+# ==========================================================
+*.swp
+*.swo
+*~
