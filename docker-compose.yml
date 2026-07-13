@@ -19,10 +19,6 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1G
     logging: &id001
       driver: json-file
       options:
@@ -58,11 +54,6 @@ services:
       retries: 3
       start_period: 20s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
     logging: *id001
   frontend:
     build:
@@ -84,11 +75,6 @@ services:
       retries: 3
       start_period: 20s
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
     logging: *id001
     read_only: true
     tmpfs:
