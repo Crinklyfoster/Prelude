@@ -7,7 +7,7 @@ from app.rag.retrieval_mode import RetrievalMode
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Enterprise RAG Assistant"
+    APP_NAME: str = "Prelude"
     DATABASE_URL: str
     DEBUG: bool = False
 

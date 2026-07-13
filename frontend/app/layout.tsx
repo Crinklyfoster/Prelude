@@ -5,8 +5,8 @@ import { Providers } from "@/lib/providers";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "Enterprise RAG Assistant",
-  description: "Enterprise Retrieval-Augmented Generation Assistant",
+  title: "Prelude",
+  description: "Understand documents before you commit to reading them.",
 };
 
 export default function RootLayout({
