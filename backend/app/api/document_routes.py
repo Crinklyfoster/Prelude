@@ -76,7 +76,11 @@ def upload_document(
     db: Annotated[Session, Depends(get_db)],
 ):
 
-    if not file.filename or not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
+    if (
+        not file.filename
+        or not file.filename.lower().endswith(".pdf")
+        or file.content_type != "application/pdf"
+    ):
         raise HTTPException(
             status_code=400, detail="Only PDF files are supported"
         )
