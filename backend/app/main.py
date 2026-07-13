@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
     logger.info("Enterprise RAG backend shutting down")
 
 
-app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
+app = FastAPI(title=f"{settings.APP_NAME} API", lifespan=lifespan)
 
 
 app.add_middleware(

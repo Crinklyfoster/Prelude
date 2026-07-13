@@ -2,7 +2,7 @@
   "__inputs": [],
   "__requires": [],
   "annotations": { "list": [] },
-  "description": "Enterprise RAG Assistant — System Overview",
+  "description": "Prelude — System Overview",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -106,7 +106,7 @@
       "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
       "title": "Container CPU Usage",
       "type": "timeseries",
-      "targets": [{ "expr": "rate(container_cpu_usage_seconds_total{name=~'enterprise-rag.*'}[1m])", "legendFormat": "{{name}}" }]
+      "targets": [{ "expr": "rate(container_cpu_usage_seconds_total{name=~'prelude-.*'}[1m])", "legendFormat": "{{name}}" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
@@ -119,12 +119,12 @@
       "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
       "title": "Container Memory Usage",
       "type": "timeseries",
-      "targets": [{ "expr": "container_memory_usage_bytes{name=~'enterprise-rag.*'}", "legendFormat": "{{name}}" }]
+      "targets": [{ "expr": "container_memory_usage_bytes{name=~'prelude-.*'}", "legendFormat": "{{name}}" }]
     }
   ],
   "refresh": "30s",
   "schemaVersion": 37,
-  "tags": ["enterprise-rag"],
+  "tags": ["prelude"],
   "templating": {
     "list": [
       {
@@ -142,7 +142,7 @@
   "time": { "from": "now-1h", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Enterprise RAG — Overview",
-  "uid": "enterprise-rag-overview",
+  "title": "Prelude — Overview",
+  "uid": "prelude-overview",
   "version": 1
 }

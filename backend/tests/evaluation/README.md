@@ -1,6 +1,6 @@
 # RAG Evaluation Framework
 
-This directory contains a simple, extensible evaluation framework for the Enterprise RAG Assistant.
+This directory contains a simple, extensible evaluation framework for the Prelude.
 
 ## Dataset Structure
 Add your evaluation questions to `questions.json`. The structure is simple:

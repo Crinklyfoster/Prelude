@@ -1,4 +1,4 @@
-# Enterprise RAG Assistant
+# Prelude
 
 An enterprise-grade Retrieval-Augmented Generation (RAG) assistant built with FastAPI, PostgreSQL, ChromaDB, Ollama, and Next.js.
 

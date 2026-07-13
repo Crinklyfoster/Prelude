@@ -59,9 +59,12 @@ export function LoginForm() {
 
   return (
     <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 shadow-lg">
-      <h1 className="mb-6 text-center text-2xl font-bold">
-        Enterprise RAG Assistant
+      <h1 className="mb-2 text-center text-2xl font-bold">
+        Prelude
       </h1>
+      <p className="mb-6 text-center text-sm text-gray-500">
+        Understand before you commit.
+      </p>
 
       <form
         onSubmit={handleSubmit(onSubmit)}

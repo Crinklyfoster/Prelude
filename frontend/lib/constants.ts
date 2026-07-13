@@ -1,1 +1,1 @@
-export const APP_NAME = "Enterprise RAG Assistant";
+export const APP_NAME = "Prelude";

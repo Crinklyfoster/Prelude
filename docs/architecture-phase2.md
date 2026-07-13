@@ -1,4 +1,4 @@
-# Enterprise RAG Assistant – Phase 2 Architecture
+# Prelude – Phase 2 Architecture
 
 ## Overview
 
