@@ -122,3 +122,6 @@ class Generator:
 #                 last_error = str(e.original_error)
 #                 
 #         raise RuntimeError(f"No provider available. Last error: {last_error}")
+#
+#        will be Implemeted later !!! once there is GPU Available now let it run on cpu 
+#         once it will be avaliable , we will deploy 

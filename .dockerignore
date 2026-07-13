@@ -1,13 +1,23 @@
 .git
-.gitignore
+.github
+
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
 
 backend/venv
-backend/__pycache__
-backend/.pytest_cache
-backend/chroma_db
 backend/uploads
+backend/chroma_db
 
 frontend/node_modules
 frontend/.next
 
+benchmarks
+docs
+
 *.log
+.env
+.env.production
+
+storage
