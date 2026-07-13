@@ -76,9 +76,23 @@ def upload_document(
     db: Annotated[Session, Depends(get_db)],
 ):
 
-    if not file.filename or not file.filename.lower().endswith(".pdf"):
+    if not file.filename or not file.filename.lower().endswith(".pdf") or file.content_type != "application/pdf":
         raise HTTPException(
             status_code=400, detail="Only PDF files are supported"
+        )
+
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+
+    if file_size == 0:
+        raise HTTPException(
+            status_code=400, detail="File cannot be empty"
+        )
+
+    if file_size > 10 * 1024 * 1024:
+        raise HTTPException(
+            status_code=400, detail="File exceeds maximum size of 10MB"
         )
 
     result = document_service.upload_document(
