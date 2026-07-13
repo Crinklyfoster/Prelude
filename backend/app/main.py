@@ -24,7 +24,16 @@ async def lifespan(app: FastAPI):
     from app.services.settings_service import SettingsService
     if SettingsService.get_provider() == "ollama":
         ModelWarmupService().warmup()
-        
+
+    from app.database.db import SessionLocal
+    from app.services.bootstrap_service import bootstrap_admin
+
+    db = SessionLocal()
+    try:
+        bootstrap_admin(db)
+    finally:
+        db.close()
+
     yield
     logger.info("Enterprise RAG backend shutting down")
 
