@@ -123,4 +123,4 @@ class Generator:
 #                 
 #         raise RuntimeError(f"No provider available. Last error: {last_error}")
 #
-#        will be Implemeted later !!! once there is GPU Avaliable
+#        will be Implemeted later !!! once there is GPU Available
