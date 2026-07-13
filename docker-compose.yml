@@ -37,6 +37,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       GROQ_API_KEY: ${GROQ_API_KEY}
       SECRET_KEY: ${SECRET_KEY}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
     volumes:
     - chroma_data:/app/chroma_db
     - uploads_data:/app/uploads
