@@ -1,11 +1,12 @@
 
 import chromadb
 from chromadb.api.types import Documents, Embeddings, IDs, Metadatas
+from app.core.config import settings
 
 
 class ChromaVectorStore:
-    def __init__(self, path: str = "./chroma_db"):
-        self.client = chromadb.PersistentClient(path=path)
+    def __init__(self):
+        self.client = chromadb.PersistentClient(path=settings.CHROMA_DB_PATH)
 
         self.collection = self.client.get_or_create_collection(
             name="documents"
