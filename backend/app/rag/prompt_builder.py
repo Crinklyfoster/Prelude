@@ -18,6 +18,7 @@ class PromptBuilder:
         seen = set()
         context_parts = []
         current_size = 0
+        context_index = 1
 
         for chunk in chunks:
             text = chunk["text"].strip()
@@ -28,7 +29,7 @@ class PromptBuilder:
             seen.add(text)
 
             formatted = (
-                f"[Source]\n"
+                f"Context {context_index}\n"
                 f"Document ID: {chunk['document_id']}\n"
                 f"Chunk: {chunk['chunk_id']}\n\n"
                 f"{text}\n"
@@ -39,6 +40,7 @@ class PromptBuilder:
 
             context_parts.append(formatted)
             current_size += len(formatted)
+            context_index += 1
 
         return "\n\n".join(context_parts)
 

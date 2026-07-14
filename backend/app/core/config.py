@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # ----------------------------
     # Retrieval
     # ----------------------------
-    TOP_K: int = 3
+    TOP_K: int = 8
     RETRIEVAL_MODE: RetrievalMode = RetrievalMode.HYBRID
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     # Retrieval Pipeline
     DENSE_TOP_K: int = 20
     SPARSE_TOP_K: int = 20
-    FINAL_TOP_K: int = 5
+    FINAL_TOP_K: int = 8
 
     RRF_K: int = 60
 

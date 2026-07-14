@@ -1,16 +1,15 @@
 import re
 
-import ollama
-
 from app.core.config import settings
 from app.core.logger import get_logger
+from app.rag.generator import Generator
 
 logger = get_logger(__name__)
 
 
 class QueryRewriter:
     def __init__(self):
-        self.client = ollama.Client(host=settings.OLLAMA_HOST)
+        self.generator = Generator()
 
     def rewrite(self, question: str, conversation_history: str):
         if not settings.ENABLE_QUERY_REWRITE:
@@ -56,12 +55,9 @@ Latest Question:
 """
 
         try:
-            response = self.client.chat(
-                model=settings.CHAT_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-            )
+            response, _ = self.generator.generate(prompt=prompt)
 
-            rewritten = response["message"]["content"].strip()
+            rewritten = response.strip()
 
             if not rewritten:
                 logger.info(f"Rewrite skipped: '{question}'")
