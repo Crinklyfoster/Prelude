@@ -7,7 +7,12 @@ from app.schemas.admin_settings import (
 
 class SettingsService:
     _provider = settings.LLM_PROVIDER
-    _model = settings.CHAT_MODEL
+
+    _models = {
+        "ollama": settings.OLLAMA_MODEL,
+        "gemini": settings.GEMINI_MODEL,
+        "groq": settings.GROQ_MODEL,
+    }
 
     @classmethod
     def get_provider(cls) -> str:
@@ -15,12 +20,12 @@ class SettingsService:
 
     @classmethod
     def get_model(cls) -> str:
-        return cls._model
+        return cls._models[cls._provider]
 
     @classmethod
     def set_provider(cls, provider: str, model: str):
-        cls._provider = provider
-        cls._model = model
+        cls._provider = provider.lower()
+        cls._models[cls._provider] = model
 
 
 def get_admin_settings() -> AdminSettingsResponse:
@@ -38,7 +43,7 @@ def get_admin_settings() -> AdminSettingsResponse:
         jwt_expire_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
         providers=ProviderStatus(
             ollama=True,
-            gemini=False,
-            groq=False,
+            gemini=bool(settings.GEMINI_API_KEY),
+            groq=bool(settings.GROQ_API_KEY),
         ),
     )
