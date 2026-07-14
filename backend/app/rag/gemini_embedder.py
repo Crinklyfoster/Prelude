@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 from google import genai
 
@@ -22,40 +22,42 @@ class GeminiEmbedder:
         return response.embeddings[0].values  # type: ignore
 
     def generate_embeddings(self, chunks: list):
-
         logger.info(
-            "Generating %d Gemini embeddings using %d workers",
+            "Generating %d Gemini embeddings using batch size %d",
             len(chunks),
-            settings.EMBEDDING_WORKERS,
+            settings.GEMINI_EMBEDDING_BATCH_SIZE,
         )
 
-        embeddings: list[dict | None] = [None] * len(chunks)
+        embeddings = []
+        batch_size = settings.GEMINI_EMBEDDING_BATCH_SIZE
 
-        def worker(idx, chunk):
-            vector = self.generate_embedding(chunk["text"])
+        for start in range(0, len(chunks), batch_size):
+            batch = chunks[start : start + batch_size]
+            texts = [c["text"] for c in batch]
 
-            return (
-                idx,
-                {
-                    "chunk_id": chunk["chunk_id"],
-                    "text": chunk["text"],
-                    "embedding": vector,
-                    "hash": chunk.get("hash", ""),
-                    "length": chunk.get("length", 0),
-                },
-            )
+            for attempt in range(5):
+                try:
+                    response = self.client.models.embed_content(
+                        model=self.model,
+                        contents=texts,
+                    )
+                    break
+                except Exception as e:
+                    if "429" not in str(e):
+                        raise
+                    time.sleep(2 ** attempt)
+            else:
+                raise RuntimeError("Max retries exceeded for rate limit.")
 
-        with ThreadPoolExecutor(
-            max_workers=settings.EMBEDDING_WORKERS,
-        ) as executor:
-
-            futures = [
-                executor.submit(worker, idx, chunk)
-                for idx, chunk in enumerate(chunks)
-            ]
-
-            for future in as_completed(futures):
-                idx, result = future.result()
-                embeddings[idx] = result
+            for chunk, emb in zip(batch, response.embeddings):
+                embeddings.append(
+                    {
+                        "chunk_id": chunk["chunk_id"],
+                        "text": chunk["text"],
+                        "embedding": emb.values,
+                        "hash": chunk.get("hash", ""),
+                        "length": chunk.get("length", 0),
+                    }
+                )
 
         return embeddings

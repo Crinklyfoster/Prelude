@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
     EMBEDDING_WORKERS: int = max(1, os.cpu_count() or 1)
     EMBEDDING_BATCH_SIZE: int = 32
+    GEMINI_EMBEDDING_BATCH_SIZE: int = 100
 
     # ----------------------------
     # Generation
