@@ -1,9 +1,13 @@
-from app.rag.embedder import OllamaEmbedder
+from app.rag.embedding_provider_manager import EmbeddingProviderManager
 
-embedder = OllamaEmbedder()
+def test_generate_embedding():
+    embedder = EmbeddingProviderManager.get_provider()
+    embedding = embedder.generate_embedding("Attention is all you need")
 
-embedding = embedder.generate_embedding("Attention is all you need")
-
-print(type(embedding))
-print(len(embedding))
-print(embedding[:10])
+    assert embedding is not None, "Embedding should not be None"
+    
+    print(type(embedding))
+    print(len(embedding))
+    print(embedding[:10])
+    
+    assert len(embedding) > 0

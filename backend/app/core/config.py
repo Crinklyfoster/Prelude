@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     # ----------------------------
     CHAT_MODEL: str = "qwen3:8b"
     EMBEDDING_MODEL: str = "nomic-embed-text"
+    EMBEDDING_PROVIDER: str = "ollama"
+    GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
     EMBEDDING_WORKERS: int = max(1, os.cpu_count() or 1)
     EMBEDDING_BATCH_SIZE: int = 32
 

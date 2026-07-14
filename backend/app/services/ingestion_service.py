@@ -3,7 +3,7 @@ import time
 from app.core.config import settings
 from app.core.logger import get_logger
 from app.rag.chunker import DocumentChunker
-from app.rag.embedder import OllamaEmbedder
+from app.rag.embedding_provider_manager import EmbeddingProviderManager
 from app.rag.lexical_index import LexicalIndex
 from app.rag.vector_store import ChromaVectorStore
 from app.services.pdf_processor import PDFProcessor
@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 class IngestionService:
     def __init__(self):
         self.chunker = DocumentChunker()
-        self.embedder = OllamaEmbedder()
+        self.embedder = EmbeddingProviderManager.get_provider()
         self.vector_store = ChromaVectorStore()
         self.lexical_index = LexicalIndex()
 

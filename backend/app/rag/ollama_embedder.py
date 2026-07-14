@@ -5,11 +5,12 @@ import ollama
 
 from app.core.config import settings
 from app.core.logger import get_logger
+from app.rag.embedding_provider import EmbeddingProvider
 
 logger = get_logger(__name__)
 
 
-class OllamaEmbedder:
+class OllamaEmbedder(EmbeddingProvider):
     def __init__(self, model_name: str = settings.EMBEDDING_MODEL):
         self.model_name = model_name
         self.client = ollama.Client(host=settings.OLLAMA_HOST)

@@ -2,7 +2,7 @@ import time
 
 from app.core.config import settings
 from app.core.logger import get_logger
-from app.rag.embedder import OllamaEmbedder
+from app.rag.embedding_provider_manager import EmbeddingProviderManager
 from app.rag.vector_store import ChromaVectorStore
 
 logger = get_logger(__name__)
@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 class Retriever:
     def __init__(self):
-        self.embedder = OllamaEmbedder()
+        self.embedder = EmbeddingProviderManager.get_provider()
         self.vector_store = ChromaVectorStore()
 
     def user_has_documents(self, current_user_id) -> bool:
