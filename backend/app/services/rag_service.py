@@ -16,6 +16,7 @@ from app.rag.query_rewriter import QueryRewriter
 from app.rag.retrieval_mode import RetrievalMode
 from app.rag.retriever import Retriever
 from app.services.benchmark_service import BenchmarkTimer
+from app.services.settings_service import SettingsService
 
 logger = logging.getLogger(__name__)
 
@@ -176,8 +177,18 @@ class RAGService:
         if not retrieved_chunks:
             timer.start("generation")
 
+            prompt = f"""
+No relevant information was found in the uploaded documents.
+
+Answer the following question using your general knowledge.
+Clearly state that the answer is not based on uploaded documents.
+
+Question:
+{question}
+"""
+
             answer, provider_meta = self.generator.generate(
-                prompt=question,
+                prompt=prompt,
                 provider_override=provider_override,
             )
 
@@ -217,7 +228,7 @@ class RAGService:
         log_llm_event(
             action="generate",
             session_id="N/A",  # Not passed here currently
-            model=settings.CHAT_MODEL,
+            model=SettingsService.get_model(),
             duration=round(generation_time, 2),
         )
 
@@ -282,8 +293,18 @@ class RAGService:
         if not retrieved_chunks:
             provider_meta = None
 
+            prompt = f"""
+No relevant information was found in the uploaded documents.
+
+Answer using your general knowledge.
+Clearly mention that the uploaded documents did not contain the answer.
+
+Question:
+{question}
+"""
+
             for chunk in self.generator.stream_generate(
-                prompt=question,
+                prompt=prompt,
                 provider_override=provider_override,
             ):
                 if isinstance(chunk, dict) and chunk.get("type") == "provider_meta":

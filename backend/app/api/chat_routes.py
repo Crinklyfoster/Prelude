@@ -10,7 +10,6 @@ from starlette.status import HTTP_204_NO_CONTENT
 from app.database.db import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
-from app.rag.query_rewriter import QueryRewriter
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -24,7 +23,6 @@ from app.services.rag_service import RAGService
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
 rag_service = RAGService()
-query_rewriter = QueryRewriter()
 
 ROLE_USER = "user"
 ROLE_ASSISTANT = "assistant"
@@ -53,12 +51,8 @@ def chat(
         f"{message.role}: {message.content}" for message in messages
     )
 
-    rewritten_question = query_rewriter.rewrite(
-        question=request.question, conversation_history=conversation_history
-    )
-
     result = rag_service.answer_question(
-        question=rewritten_question,
+        question=request.question,
         conversation_history=conversation_history,
         current_user_id=current_user.id,
         document_ids=request.document_ids,
@@ -103,15 +97,11 @@ def stream_chat(
         f"{message.role}: {message.content}" for message in messages
     )
 
-    rewritten_question = query_rewriter.rewrite(
-        question=request.question, conversation_history=conversation_history
-    )
-
     def event_generator():
         full_response = ""
 
         for chunk in rag_service.stream_answer(
-            question=rewritten_question,
+            question=request.question,
             conversation_history=conversation_history,
             current_user_id=current_user.id,
             document_ids=request.document_ids,
