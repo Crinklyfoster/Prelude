@@ -7,6 +7,8 @@ import {
 } from "react";
 import { toast } from "sonner";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import { useUploadDocument } from "@/hooks/useUploadDocument";
 
 export default function DocumentUpload() {
@@ -16,6 +18,7 @@ export default function DocumentUpload() {
     useRef<HTMLInputElement | null>(null);
 
   const uploadMutation = useUploadDocument();
+  const queryClient = useQueryClient();
 
   const handleFileChange = (
     event: ChangeEvent<HTMLInputElement>
@@ -36,6 +39,14 @@ export default function DocumentUpload() {
           uploadMutation.mutateAsync(file)
         )
       );
+
+      await queryClient.invalidateQueries({
+        queryKey: ["documents"],
+      });
+
+      await queryClient.refetchQueries({
+        queryKey: ["documents"],
+      });
 
       toast.success(
         `${selectedFiles.length} documents uploaded`
