@@ -20,12 +20,14 @@ interface SystemStatus {
 function healthColor(value: string) {
   if (value === "healthy") return "text-emerald-600 dark:text-emerald-400";
   if (value === "degraded") return "text-amber-600 dark:text-amber-400";
+  if (value === "disabled") return "text-gray-500 dark:text-gray-400";
   return "text-red-600 dark:text-red-400";
 }
 
 function healthDot(value: string) {
   if (value === "healthy") return "bg-emerald-500";
   if (value === "degraded") return "bg-amber-500";
+  if (value === "disabled") return "bg-gray-400 dark:bg-gray-500";
   return "bg-red-500";
 }
 

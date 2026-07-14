@@ -24,6 +24,12 @@ class HealthService:
 
     @staticmethod
     def check_ollama():
+        if (
+            settings.LLM_PROVIDER != "ollama"
+            and settings.EMBEDDING_PROVIDER != "ollama"
+        ):
+            return "disabled"
+
         try:
             response = requests.get(
                 f"{settings.OLLAMA_HOST}/api/tags", timeout=5

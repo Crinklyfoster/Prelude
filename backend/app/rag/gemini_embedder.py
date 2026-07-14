@@ -19,8 +19,7 @@ class GeminiEmbedder:
             contents=text,
         )
 
-        assert response.embeddings is not None, "Embeddings should not be None"
-        return response.embeddings[0].values
+        return response.embeddings[0].values  # type: ignore
 
     def generate_embeddings(self, chunks: list):
 
@@ -35,11 +34,16 @@ class GeminiEmbedder:
         def worker(idx, chunk):
             vector = self.generate_embedding(chunk["text"])
 
-            return idx, {
-                "chunk_id": chunk["chunk_id"],
-                "text": chunk["text"],
-                "embedding": vector,
-            }
+            return (
+                idx,
+                {
+                    "chunk_id": chunk["chunk_id"],
+                    "text": chunk["text"],
+                    "embedding": vector,
+                    "hash": chunk.get("hash", ""),
+                    "length": chunk.get("length", 0),
+                },
+            )
 
         with ThreadPoolExecutor(
             max_workers=settings.EMBEDDING_WORKERS,
