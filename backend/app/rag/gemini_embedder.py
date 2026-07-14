@@ -49,6 +49,9 @@ class GeminiEmbedder:
             else:
                 raise RuntimeError("Max retries exceeded for rate limit.")
 
+            if response.embeddings is None:
+                raise RuntimeError("Gemini API returned no embeddings.")
+
             for chunk, emb in zip(batch, response.embeddings):
                 embeddings.append(
                     {
